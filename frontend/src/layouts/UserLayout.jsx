@@ -1,22 +1,42 @@
-import React from 'react';
+import React, { useState } from 'react';
+import UserSidebar from '../components/Sidebar/UserSidebar';
+import UserDashboard from '../pages/Dashboard/UserDashboard';
 
 const UserLayout = ({ children, currentUser, onLogout }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6">
-          <div className="flex items-center text-sm font-medium text-slate-900">
+    <div className="flex min-h-screen bg-slate-50">
+      {/* Sidebar */}
+      <UserSidebar isOpen={isSidebarOpen} onToggle={setIsSidebarOpen} />
+
+      {/* Right side container */}
+      <div
+        className={`flex-1 flex flex-col min-h-screen overflow-y-auto transition-all duration-300 ${
+          isSidebarOpen ? 'ml-72' : 'ml-0'
+        }`}
+      >
+        {/* Header bar */}
+        <header className="sticky top-0 bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 z-40 w-full shrink-0">
+          <div
+            className={`flex items-center text-sm font-medium text-slate-900 transition-all duration-300 ${
+              isSidebarOpen ? 'pl-0' : 'pl-12'
+            }`}
+          >
             ProjectFlow User Portal
           </div>
-          <button 
+          <button
             onClick={onLogout}
-            className="text-sm text-slate-500 hover:text-slate-800"
+            title={currentUser?.username ? `Logout (${currentUser.username})` : 'Logout'}
+            className="w-9 h-9 rounded-full bg-indigo-500 flex items-center justify-center text-white text-sm font-semibold hover:bg-indigo-600 transition-colors cursor-pointer"
           >
-            Logout ({currentUser?.username})
+            PP
           </button>
         </header>
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50">
-          {children}
+
+        {/* Dynamic page content */}
+        <main className="flex-1">
+          {children || <UserDashboard currentUser={currentUser} onLogout={onLogout} />}
         </main>
       </div>
     </div>

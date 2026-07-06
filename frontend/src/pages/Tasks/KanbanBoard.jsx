@@ -36,7 +36,7 @@ const KanbanBoard = () => {
     e.dataTransfer.setData('taskId', taskId);
     e.dataTransfer.setData('sourceColTitle', sourceColTitle);
     e.dataTransfer.effectAllowed = 'move';
-    
+
     setTimeout(() => {
       e.target.classList.add('opacity-40');
     }, 0);
@@ -62,14 +62,14 @@ const KanbanBoard = () => {
   const handleDrop = (e, targetColTitle) => {
     e.preventDefault();
     setActiveCol(null);
-    
+
     const taskId = parseInt(e.dataTransfer.getData('taskId'));
     const sourceColTitle = e.dataTransfer.getData('sourceColTitle');
 
     if (!taskId || !sourceColTitle || sourceColTitle === targetColTitle) return;
 
     setColumns(prev => {
-      const newCols = prev.map(c => ({...c, tasks: [...c.tasks]}));
+      const newCols = prev.map(c => ({ ...c, tasks: [...c.tasks] }));
       const sourceCol = newCols.find(c => c.title === sourceColTitle);
       const targetCol = newCols.find(c => c.title === targetColTitle);
 
@@ -108,7 +108,7 @@ const KanbanBoard = () => {
 
   return (
     <div className="p-8 w-full flex-1 flex flex-col animate-in fade-in duration-300">
-      
+
       {/* Header */}
       <div className="flex justify-between items-center mb-8 shrink-0">
         <div>
@@ -125,10 +125,10 @@ const KanbanBoard = () => {
       {/* Kanban Board Area - flex-auto allows growing with content to avoid internal scrollbars while stretching when empty */}
       <div className="flex-auto overflow-x-auto flex pb-4">
         <div className="flex gap-6 min-w-max items-stretch w-full">
-          
+
           {columns.map((col, idx) => (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               className={`flex-1 min-w-[320px] flex flex-col rounded-xl border ${getColorClasses(col.color, activeCol === col.title)}`}
               onDragOver={(e) => handleDragOver(e, col.title)}
               onDragLeave={handleDragLeave}
@@ -140,11 +140,11 @@ const KanbanBoard = () => {
                   {col.tasks.length}
                 </span>
               </div>
-              
+
               <div className="p-4 space-y-4">
                 {col.tasks.map(task => (
-                  <div 
-                    key={task.id} 
+                  <div
+                    key={task.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, task.id, col.title)}
                     onDragEnd={handleDragEnd}
@@ -155,7 +155,7 @@ const KanbanBoard = () => {
                       <Flag className="w-4 h-4 text-rose-500 shrink-0 ml-2" />
                     </div>
                     <p className="text-xs text-slate-500 mb-4 line-clamp-2">{task.desc}</p>
-                    
+
                     <div className="flex justify-between items-center text-xs text-slate-500">
                       <div className="flex items-center">
                         <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -168,13 +168,13 @@ const KanbanBoard = () => {
                         {task.assignee}
                       </div>
                     </div>
-                    
+
                     <div className="mt-4 pt-3 border-t border-slate-100">
                       <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">{task.project}</span>
                     </div>
                   </div>
                 ))}
-                
+
                 {col.tasks.length === 0 && (
                   <div className="h-24 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center text-slate-400 text-sm font-medium">
                     Drop tasks here
@@ -183,7 +183,7 @@ const KanbanBoard = () => {
               </div>
             </div>
           ))}
-          
+
         </div>
       </div>
     </div>

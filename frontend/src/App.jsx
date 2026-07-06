@@ -3,6 +3,10 @@ import Login from './pages/Auth/Login';
 import AdminLayout from './layouts/AdminLayout';
 import UserLayout from './layouts/UserLayout';
 import AppRoutes from './routes/AppRoutes';
+import { Route, Routes } from 'react-router-dom';
+import TaskDetails from './pages/Task Details/TaskDetails';
+import UserDashboard from './pages/Dashboard/UserDashboard';
+import TaskBoard from './pages/kanban/kanban';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -26,9 +30,15 @@ function App() {
 
   // User View
   return (
-    <UserLayout currentUser={currentUser} onLogout={handleLogout}>
-      <div className="p-8 max-w-7xl mx-auto">Standard User View</div>
-    </UserLayout>
+    <>
+      <UserLayout currentUser={currentUser} onLogout={handleLogout}>
+        <Routes>
+          <Route path="/" element={<UserDashboard />} />
+          <Route path="/taskDetails" element={<TaskDetails />} />
+          <Route path="/kanban" element={<TaskBoard />} />
+        </Routes>
+      </UserLayout>
+    </>
   );
 }
 

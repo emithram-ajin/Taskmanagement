@@ -29,7 +29,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-8 w-full">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Project Overview</h1>
         <p className="text-slate-500 mt-1">Key metrics and system status</p>
@@ -104,6 +104,48 @@ const Dashboard = () => {
                 <Bar dataKey="value" fill="#4f46e5" radius={[0, 4, 4, 0]} barSize={32} />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Delayed Tasks Alert */}
+      <div className="mt-6 bg-rose-50 border border-rose-100 rounded-xl p-5 flex items-start space-x-4">
+        <div className="bg-rose-100 p-2 rounded-full text-rose-600 mt-0.5">
+          <AlertCircle className="w-5 h-5" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-rose-700">Delayed Tasks</h3>
+          <p className="text-rose-600">6 task(s) past deadline</p>
+        </div>
+      </div>
+
+      {/* Blockers */}
+      <div className="mt-6 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-800 mb-6">Recent Blockers</h2>
+        <div className="space-y-4">
+          <div className="flex justify-between items-start border-b border-slate-100 pb-4">
+            <div className="flex space-x-3 items-start">
+              <div className="text-rose-500 mt-0.5">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900">Missing database credentials for production migration</h4>
+                <p className="text-xs text-slate-500">Priya Patel · Database migration</p>
+              </div>
+            </div>
+            <div className="text-xs text-slate-400">4/9/2026</div>
+          </div>
+          <div className="flex justify-between items-start">
+            <div className="flex space-x-3 items-start">
+              <div className="text-rose-500 mt-0.5">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900">Apple Developer account approval pending</h4>
+                <p className="text-xs text-slate-500">James Kim · Push notification service</p>
+              </div>
+            </div>
+            <div className="text-xs text-slate-400">4/8/2026</div>
           </div>
         </div>
       </div>

@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import Login from './pages/Auth/Login';
 import AdminLayout from './layouts/AdminLayout';
 import UserLayout from './layouts/UserLayout';
-import AdminDashboard from './pages/Dashboard/AdminDashboard';
-import UserDashboard from './pages/Dashboard/UserDashboard';
+import AppRoutes from './routes/AppRoutes';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -20,7 +19,7 @@ function App() {
   if (currentUser.role === 'admin') {
     return (
       <AdminLayout onLogout={handleLogout}>
-        <AdminDashboard />
+        <AppRoutes />
       </AdminLayout>
     );
   }
@@ -28,7 +27,7 @@ function App() {
   // User View
   return (
     <UserLayout currentUser={currentUser} onLogout={handleLogout}>
-      <UserDashboard />
+      <div className="p-8 max-w-7xl mx-auto">Standard User View</div>
     </UserLayout>
   );
 }

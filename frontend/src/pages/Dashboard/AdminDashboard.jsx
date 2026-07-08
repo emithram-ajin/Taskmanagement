@@ -119,33 +119,66 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Blockers */}
-      <div className="mt-6 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-800 mb-6">Recent Blockers</h2>
-        <div className="space-y-4">
-          <div className="flex justify-between items-start border-b border-slate-100 pb-4">
-            <div className="flex space-x-3 items-start">
-              <div className="text-rose-500 mt-0.5">
-                <AlertCircle className="w-4 h-4" />
+      {/* Bottom Grid */}
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Blockers */}
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm flex flex-col lg:col-span-2">
+          <h2 className="text-lg font-semibold text-slate-800 mb-6">Recent Blockers</h2>
+          <div className="space-y-4 flex-1">
+            <div className="flex justify-between items-start border-b border-slate-100 pb-4">
+              <div className="flex space-x-3 items-start">
+                <div className="text-rose-500 mt-0.5">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900">Missing database credentials for production migration</h4>
+                  <p className="text-xs text-slate-500">Priya Patel · Database migration</p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-sm font-semibold text-slate-900">Missing database credentials for production migration</h4>
-                <p className="text-xs text-slate-500">Priya Patel · Database migration</p>
-              </div>
+              <div className="text-xs text-slate-400">4/9/2026</div>
             </div>
-            <div className="text-xs text-slate-400">4/9/2026</div>
+            <div className="flex justify-between items-start">
+              <div className="flex space-x-3 items-start">
+                <div className="text-rose-500 mt-0.5">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900">Apple Developer account approval pending</h4>
+                  <p className="text-xs text-slate-500">James Kim · Push notification service</p>
+                </div>
+              </div>
+              <div className="text-xs text-slate-400">4/8/2026</div>
+            </div>
           </div>
-          <div className="flex justify-between items-start">
-            <div className="flex space-x-3 items-start">
-              <div className="text-rose-500 mt-0.5">
-                <AlertCircle className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-slate-900">Apple Developer account approval pending</h4>
-                <p className="text-xs text-slate-500">James Kim · Push notification service</p>
-              </div>
-            </div>
-            <div className="text-xs text-slate-400">4/8/2026</div>
+        </div>
+
+        {/* Quick Login As */}
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm flex flex-col">
+          <h2 className="text-lg font-semibold text-slate-800 mb-1">Quick Login As</h2>
+          <p className="text-sm text-slate-500 mb-6">View any team member's dashboard</p>
+          
+          <div className="space-y-3 flex-1">
+            {[
+              { name: 'Sarah Chen', initials: 'S', color: 'bg-indigo-600' },
+              { name: 'Marcus Rodriguez', initials: 'M', color: 'bg-indigo-600' },
+              { name: 'Priya Patel', initials: 'P', color: 'bg-indigo-600' },
+              { name: 'James Kim', initials: 'J', color: 'bg-indigo-600' },
+              { name: 'Emma Watson', initials: 'E', color: 'bg-indigo-600' },
+            ].map((user, idx) => (
+              <button key={idx} className="w-full flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors border border-transparent group">
+                <div className="flex items-center space-x-4">
+                  <div className={`w-8 h-8 rounded-full ${user.color} flex items-center justify-center text-white text-xs font-medium`}>
+                    {user.initials}
+                  </div>
+                  <span className="text-sm font-medium text-slate-900">{user.name}</span>
+                </div>
+                <div className="text-slate-400 group-hover:text-indigo-600 transition-colors">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
       </div>

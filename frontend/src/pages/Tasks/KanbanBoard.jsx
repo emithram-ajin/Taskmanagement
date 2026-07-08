@@ -7,25 +7,25 @@ const KanbanBoard = () => {
       title: 'TO DO',
       color: 'slate',
       tasks: [
-        { id: 1, title: 'Database migration', desc: 'Migrate analytics data to new schema', date: 'Apr 30', project: 'Dashboard Redesign', assignee: 'James' },
-        { id: 2, title: 'Push notification service', desc: 'Implement push notifications for iOS and Android', date: 'May 1', project: 'Mobile App Launch', assignee: 'Priya' }
+        { id: 1, title: 'Database migration', desc: 'Migrate analytics data to new schema', date: 'Apr 30', project: 'Dashboard Redesign', assignee: 'James', priority: 'high' },
+        { id: 2, title: 'Push notification service', desc: 'Implement push notifications for iOS and Android', date: 'May 1', project: 'Mobile App Launch', assignee: 'Priya', priority: 'medium' }
       ]
     },
     {
       title: 'IN PROGRESS',
       color: 'indigo',
       tasks: [
-        { id: 3, title: 'Implement analytics charts', desc: 'Build interactive charts using Recharts library', date: 'Apr 20', project: 'Dashboard Redesign', assignee: 'Sarah' },
-        { id: 4, title: 'API endpoint optimization', desc: 'Improve response times for dashboard APIs', date: 'Apr 25', project: 'Dashboard Redesign', assignee: 'Priya' },
-        { id: 5, title: 'Mobile UI components', desc: 'Build reusable component library for mobile app', date: 'Apr 15', project: 'Mobile App Launch', assignee: 'Marcus' }
+        { id: 3, title: 'Implement analytics charts', desc: 'Build interactive charts using Recharts library', date: 'Apr 20', project: 'Dashboard Redesign', assignee: 'Sarah', priority: 'high' },
+        { id: 4, title: 'API endpoint optimization', desc: 'Improve response times for dashboard APIs', date: 'Apr 25', project: 'Dashboard Redesign', assignee: 'Priya', priority: 'low' },
+        { id: 5, title: 'Mobile UI components', desc: 'Build reusable component library for mobile app', date: 'Apr 15', project: 'Mobile App Launch', assignee: 'Marcus', priority: 'medium' }
       ]
     },
     {
       title: 'COMPLETED',
       color: 'emerald',
       tasks: [
-        { id: 6, title: 'Design new dashboard layout', desc: 'Create wireframes and mockups for the new dashboard', date: 'Mar 15', project: 'Dashboard Redesign', assignee: 'Sarah' },
-        { id: 7, title: 'Content strategy document', desc: 'Define messaging and content calendar for Q2', date: 'Apr 5', project: 'Q2 Campaign', assignee: 'Emma' }
+        { id: 6, title: 'Design new dashboard layout', desc: 'Create wireframes and mockups for the new dashboard', date: 'Mar 15', project: 'Dashboard Redesign', assignee: 'Sarah', priority: 'low' },
+        { id: 7, title: 'Content strategy document', desc: 'Define messaging and content calendar for Q2', date: 'Apr 5', project: 'Q2 Campaign', assignee: 'Emma', priority: 'medium' }
       ]
     }
   ]);
@@ -106,6 +106,15 @@ const KanbanBoard = () => {
     }
   };
 
+  const getFlagColor = (priority) => {
+    switch(priority?.toLowerCase()) {
+      case 'low': return 'text-emerald-500';
+      case 'medium': return 'text-amber-500';
+      case 'high': return 'text-rose-500';
+      default: return 'text-slate-400';
+    }
+  };
+
   return (
     <div className="p-8 w-full flex-1 flex flex-col animate-in fade-in duration-300">
 
@@ -152,7 +161,7 @@ const KanbanBoard = () => {
                   >
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-semibold text-slate-900 text-sm leading-tight">{task.title}</h4>
-                      <Flag className="w-4 h-4 text-rose-500 shrink-0 ml-2" />
+                      <Flag className={`w-4 h-4 shrink-0 ml-2 ${getFlagColor(task.priority)}`} />
                     </div>
                     <p className="text-xs text-slate-500 mb-4 line-clamp-2">{task.desc}</p>
 

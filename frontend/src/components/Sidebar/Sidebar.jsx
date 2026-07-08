@@ -24,7 +24,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 h-screen text-slate-300 flex flex-col font-sans">
+    <aside className="w-64 bg-slate-900 h-full text-slate-300 flex flex-col font-sans shrink-0">
       <div className="p-6 border-b border-slate-800">
         <h1 className="text-2xl font-semibold text-white tracking-tight">ProjectFlow</h1>
         <p className="text-xs text-slate-500 mt-1">IT Team Manager</p>
@@ -51,12 +51,12 @@ const Sidebar = () => {
       </nav>
       
       {/* Bottom user profile area placeholder */}
-      <div className="p-4 border-t border-slate-800">
-        <div className="flex items-center space-x-3 px-2">
-          <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold">
-            A
-          </div>
-          <div>
+      <div className="p-4 border-t border-slate-800 shrink-0">
+        <div className="flex items-center justify-between px-2 cursor-pointer hover:bg-slate-800 p-2 rounded-lg transition-colors">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold">
+              A
+            </div>
             <div className="text-sm font-medium text-white">Admin User</div>
           </div>
         </div>

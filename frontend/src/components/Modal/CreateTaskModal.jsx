@@ -6,6 +6,10 @@ const CreateTaskModal = ({ isOpen, onClose }) => {
     <Modal isOpen={isOpen} onClose={onClose} title="Create Task">
       <form className="space-y-4" onSubmit={e => { e.preventDefault(); onClose(); }}>
         <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Task Name</label>
+          <input type="text" required className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow" />
+        </div>
+        <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
           <textarea rows="3" required className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow"></textarea>
         </div>

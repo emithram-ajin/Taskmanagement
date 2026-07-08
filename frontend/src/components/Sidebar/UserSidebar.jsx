@@ -12,8 +12,8 @@ const UserSidebar = ({ isOpen, onToggle }) => {
         { label: 'My Tasks', icon: LayoutGrid, path: '/' },
         { label: 'Task Details', icon: CheckSquare, path: '/taskDetails' },
         { label: 'Kanban Board', icon: KanbanSquare, path: '/kanban' },
-        { label: 'Daily Scrum', icon: MessageSquare, path: '/scrum' },
-        { label: 'Report Blockers', icon: AlertCircle, path: '/blockers' },
+        { label: 'Daily Scrum', icon: MessageSquare, path: '/Dailyscrum' },
+        { label: 'Report Blockers', icon: AlertCircle, path: '/BlockerTracking' },
     ];
 
     return (
@@ -45,12 +45,12 @@ const UserSidebar = ({ isOpen, onToggle }) => {
                             <button
                                 key={label}
                                 onClick={() => navigate(path)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors cursor-pointer ${active
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold transition-colors cursor-pointer ${active
                                         ? 'bg-indigo-600 text-white'
                                         : 'text-slate-300 hover:bg-slate-800'
                                     }`}
                             >
-                                <Icon size={18} />
+                                <Icon size={20} />
                                 <span>{label}</span>
                             </button>
                         );
@@ -59,8 +59,8 @@ const UserSidebar = ({ isOpen, onToggle }) => {
 
                 {/* Footer / logout */}
                 <div className="px-4 py-4 border-t border-slate-800">
-                    <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer">
-                        <LogOut size={18} />
+                    <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer">
+                        <LogOut size={20} />
                         <span>Logout</span>
                     </button>
                 </div>

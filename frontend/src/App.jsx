@@ -4,9 +4,13 @@ import AdminLayout from './layouts/AdminLayout';
 import UserLayout from './layouts/UserLayout';
 import AppRoutes from './routes/AppRoutes';
 import { Route, Routes } from 'react-router-dom';
-import TaskDetails from './pages/Task Details/TaskDetails';
+
 import UserDashboard from './pages/Dashboard/UserDashboard';
-import TaskBoard from './pages/kanban/kanban';
+
+import DailyScrum from './pages/Scrum-User/DailyScrum';
+import TaskDetails from './pages/Task Details-User/TaskDetails';
+import TaskBoard from './pages/kanban-User/kanban';
+import BlockerTracking from './pages/Report-User/BlockerTracking';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -36,6 +40,8 @@ function App() {
           <Route path="/" element={<UserDashboard />} />
           <Route path="/taskDetails" element={<TaskDetails />} />
           <Route path="/kanban" element={<TaskBoard />} />
+          <Route path="/Dailyscrum" element={<DailyScrum />} />
+          <Route path="/BlockerTracking" element={<BlockerTracking />} />
         </Routes>
       </UserLayout>
     </>

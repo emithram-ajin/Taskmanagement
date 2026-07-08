@@ -88,6 +88,22 @@ const ANIMATION_STYLES = `
 .tb-empty-in {
     animation: taskboard-fade-in 0.3s ease-out both;
 }
+.tb-scroll-row {
+    scroll-behavior: smooth;
+}
+.tb-scroll-row::-webkit-scrollbar {
+    height: 8px;
+}
+.tb-scroll-row::-webkit-scrollbar-track {
+    background: transparent;
+}
+.tb-scroll-row::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 116, 139, 0.3);
+    border-radius: 9999px;
+}
+.tb-scroll-row::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(100, 116, 139, 0.5);
+}
 `;
 
 // Modern custom dropdown — replaces the plain native <select>.
@@ -279,7 +295,7 @@ export default function TaskBoard() {
             </div>
 
             {/* Kanban Columns */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 pb-6 items-stretch">
+            <div className="tb-scroll-row flex gap-5 pb-6 items-stretch overflow-x-auto">
                 {COLUMNS.map((col, colIndex) => {
                     const colTasks = visibleTasks
                         .filter((t) => t.status === col.key)
@@ -294,7 +310,7 @@ export default function TaskBoard() {
                             onDragLeave={() => setDragOverCol(null)}
                             onDrop={() => handleDrop(col.key)}
                             style={{ animationDelay: `${colIndex * 80}ms` }}
-                            className={`tb-column-in flex flex-col rounded-xl ${col.colBorder} ${isOver ? col.dropHighlight : col.bgColor} transition-colors duration-200`}
+                            className={`tb-column-in flex flex-col rounded-xl w-[480px] shrink-0 ${col.colBorder} ${isOver ? col.dropHighlight : col.bgColor} transition-colors duration-200`}
                         >
                             {/* Column Header */}
                             <div className="px-5 pt-5 pb-4 flex items-center justify-between shrink-0">

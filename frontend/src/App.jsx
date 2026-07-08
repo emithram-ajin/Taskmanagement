@@ -11,6 +11,7 @@ import DailyScrum from './pages/Scrum-User/DailyScrum';
 import TaskDetails from './pages/Task Details-User/TaskDetails';
 import TaskBoard from './pages/kanban-User/kanban';
 import BlockerTracking from './pages/Report-User/BlockerTracking';
+import Dependencies from './pages/Task Details-User/Dependencies';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -42,6 +43,7 @@ function App() {
           <Route path="/kanban" element={<TaskBoard />} />
           <Route path="/Dailyscrum" element={<DailyScrum />} />
           <Route path="/BlockerTracking" element={<BlockerTracking />} />
+          <Route path="/taskDetails/dependencies" element={<Dependencies />} />
         </Routes>
       </UserLayout>
     </>

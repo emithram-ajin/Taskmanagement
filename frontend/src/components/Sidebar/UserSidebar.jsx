@@ -1,20 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutGrid, CheckSquare, KanbanSquare, MessageSquare, AlertCircle, LogOut, X, Menu } from 'lucide-react';
+import { LayoutGrid, CheckSquare, KanbanSquare, MessageSquare, AlertCircle, LogOut, X, Menu, ChevronDown, GitBranch } from 'lucide-react';
 
 // isOpen and onToggle are controlled by the parent layout so the
 // content area can react when the sidebar opens or closes.
 const UserSidebar = ({ isOpen, onToggle }) => {
     const location = useLocation();
     const navigate = useNavigate();
+    const [expandedItem, setExpandedItem] = useState(null);
 
     const navItems = [
         { label: 'My Tasks', icon: LayoutGrid, path: '/' },
-        { label: 'Task Details', icon: CheckSquare, path: '/taskDetails' },
+        {
+            label: 'Task Details',
+            icon: CheckSquare,
+            path: '/taskDetails',
+            subItems: [
+                { label: 'Dependencies', path: '/taskDetails/dependencies' },
+            ],
+        },
         { label: 'Kanban Board', icon: KanbanSquare, path: '/kanban' },
         { label: 'Daily Scrum', icon: MessageSquare, path: '/Dailyscrum' },
         { label: 'Report Blockers', icon: AlertCircle, path: '/BlockerTracking' },
     ];
+
+    const handleNavClick = (item) => {
+        if (item.subItems) {
+            setExpandedItem(expandedItem === item.label ? null : item.label);
+        }
+        navigate(item.path);
+    };
 
     return (
         <>
@@ -39,20 +54,51 @@ const UserSidebar = ({ isOpen, onToggle }) => {
 
                 {/* Nav */}
                 <nav className="flex-1 px-4 space-y-1">
-                    {navItems.map(({ label, icon: Icon, path }) => {
+                    {navItems.map((item) => {
+                        const { label, icon: Icon, path, subItems } = item;
                         const active = location.pathname === path;
+                        const isExpanded = expandedItem === label;
+
                         return (
-                            <button
-                                key={label}
-                                onClick={() => navigate(path)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold transition-colors cursor-pointer ${active
-                                        ? 'bg-indigo-600 text-white'
-                                        : 'text-slate-300 hover:bg-slate-800'
-                                    }`}
-                            >
-                                <Icon size={20} />
-                                <span>{label}</span>
-                            </button>
+                            <div key={label}>
+                                <button
+                                    onClick={() => handleNavClick(item)}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold transition-colors cursor-pointer ${active
+                                            ? 'bg-indigo-600 text-white'
+                                            : 'text-slate-300 hover:bg-slate-800'
+                                        }`}
+                                >
+                                    <Icon size={20} />
+                                    <span className="flex-1 text-left">{label}</span>
+                                    {subItems && (
+                                        <ChevronDown
+                                            size={16}
+                                            className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                                        />
+                                    )}
+                                </button>
+
+                                {subItems && isExpanded && (
+                                    <div className="mt-1 ml-4 pl-4 border-l border-slate-800 space-y-1">
+                                        {subItems.map((sub) => {
+                                            const subActive = location.pathname === sub.path;
+                                            return (
+                                                <button
+                                                    key={sub.label}
+                                                    onClick={() => navigate(sub.path)}
+                                                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${subActive
+                                                            ? 'bg-indigo-600/20 text-indigo-300'
+                                                            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                                                        }`}
+                                                >
+                                                    <GitBranch size={14} />
+                                                    <span>{sub.label}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
                         );
                     })}
                 </nav>

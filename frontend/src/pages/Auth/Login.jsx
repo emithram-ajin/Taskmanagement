@@ -7,7 +7,7 @@ const Login = ({ onLogin }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     // Simple role-based login simulation
     if (username.toLowerCase() === 'admin') {
       onLogin({ username, role: 'admin' });
@@ -29,7 +29,7 @@ const Login = ({ onLogin }) => {
             Sign in to access your dashboard
           </p>
         </div>
-        
+
         {error && (
           <div className="bg-rose-50 text-rose-600 p-3 rounded-lg text-sm text-center border border-rose-200">
             {error}

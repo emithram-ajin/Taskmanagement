@@ -7,12 +7,14 @@ import TaskList from '../pages/Tasks/TaskList';
 import KanbanBoard from '../pages/Tasks/KanbanBoard';
 import ScrumUpdates from '../pages/Scrum/ScrumUpdates';
 import BlockerTracking from '../pages/Blockers/BlockerTracking';
+import Members from '../pages/Members/Members';
 
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<AdminDashboard />} />
       <Route path="/teams" element={<Teams />} />
+      <Route path="/members" element={<Members />} />
       <Route path="/projects" element={<Projects />} />
       <Route path="/tasks" element={<TaskList />} />
       <Route path="/kanban" element={<KanbanBoard />} />

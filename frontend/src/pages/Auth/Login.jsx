@@ -54,6 +54,7 @@ const SOCIAL_PROVIDERS = [
   { key: 'facebook', label: 'f', textColor: 'text-[#1877F2]' },
   { key: 'apple', label: '', textColor: 'text-slate-900' },
 ];
+import apiServices from '../../services/apiServices';
 
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('');
@@ -67,24 +68,25 @@ const Login = ({ onLogin }) => {
     setShake(true);
     setTimeout(() => setShake(false), 400);
   };
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!email.trim()) {
-      triggerError('Please enter your email address.');
-      return;
-    }
-    if (!password) {
-      triggerError('Please enter your password.');
-      return;
-    }
-
     setError('');
-    if (email.toLowerCase().startsWith('admin')) {
-      onLogin?.({ email, role: 'admin' });
-    } else {
-      onLogin?.({ email, role: 'user' });
+    
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const user = await apiServices.loginUser({ email, password });
+      onLogin(user); // Pass the real user object back to App.jsx
+    } catch (err) {
+      setError(err.response?.data?.message || 'Invalid email or password');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -112,6 +114,7 @@ const Login = ({ onLogin }) => {
               <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="email"
+                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email"
@@ -152,10 +155,11 @@ const Login = ({ onLogin }) => {
           {/* Forgot password */}
           <div className="text-right">
             <button
-              type="button"
-              className="text-sm font-medium text-slate-500 hover:text-slate-700 hover:underline cursor-pointer"
+              type="submit"
+              disabled={isLoading}
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
             >
-              Forgot password?
+              {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
 

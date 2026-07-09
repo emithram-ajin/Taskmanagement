@@ -5,14 +5,45 @@ const apiServices = {
   // TEAMS
   // -------------------------
   getTeams: async () => {
-    // const response = await axiosInstance.get('/teams');
-    // return response.data;
+    const response = await axiosInstance.get('/admin/teams');
+    return response.data;
   },
   
   createTeam: async (teamData) => {
-    // const response = await axiosInstance.post('/teams', teamData);
-    // return response.data;
+    const response = await axiosInstance.post('/admin/team', teamData);
+    return response.data;
   },
+
+  updateTeam: async (teamId, teamData) => {
+    const response = await axiosInstance.put(`/admin/team/${teamId}`, teamData);
+    return response.data;
+  },
+
+  deleteTeam: async (teamId) => {
+    const response = await axiosInstance.delete(`/admin/team/${teamId}`);
+    return response.data;
+  },
+  loginUser: async (credentials) => {
+    const response = await axiosInstance.post('/auth/login', credentials);
+    return response.data;
+  },
+
+  registerUser: async (userData) => {
+    const response = await axiosInstance.post('/auth/register', userData);
+    return response.data;
+  },
+  
+  getAllMembers: async () => {
+    const response = await axiosInstance.get('/admin/members');
+    return response.data;
+  },
+
+  deleteMember: async (userId) => {
+    const response = await axiosInstance.delete(`/auth/${userId}`);
+    return response.data;
+  },
+  
+
 
   // -------------------------
   // PROJECTS

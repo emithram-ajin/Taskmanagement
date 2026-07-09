@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
+  User,
   FolderKanban, 
   CheckSquare, 
   KanbanSquare, 
@@ -16,6 +17,7 @@ const Sidebar = () => {
   const navItems = [
     { icon: LayoutDashboard, label: 'Overview', path: '/' },
     { icon: Users, label: 'Teams', path: '/teams' },
+    { icon: User, label: 'Members', path: '/members' },
     { icon: FolderKanban, label: 'Projects', path: '/projects' },
     { icon: CheckSquare, label: 'Tasks', path: '/tasks' },
     { icon: KanbanSquare, label: 'Kanban Board', path: '/kanban' },

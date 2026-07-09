@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Pencil, Trash2, UserPlus } from 'lucide-react';
 import CreateTeamModal from '../../components/Modal/CreateTeamModal';
 import EditTeamModal from '../../components/Modal/EditTeamModal';
 import AddMemberModal from '../../components/Modal/AddMemberModal';
+import apiServices from '../../services/apiServices';
 
 const Teams = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -15,11 +16,64 @@ const Teams = () => {
     setExpandedTeams(prev => ({ ...prev, [teamId]: !prev[teamId] }));
   };
 
-  const [teams, setTeams] = useState([
-    { id: 1, name: 'Frontend Team', desc: 'Responsible for UI/UX development', date: 'Jan 15, 2026', members: ['Sarah Chen', 'Marcus Rodriguez'] },
-    { id: 2, name: 'Backend Team', desc: 'API and database development', date: 'Jan 15, 2026', members: ['Priya Patel', 'James Kim'] },
-    { id: 3, name: 'Marketing Team', desc: 'Product marketing and content', date: 'Feb 1, 2026', members: ['Emma Watson'] }
-  ]);
+  const [teams, setTeams] = useState([]);
+  const [allMembers, setAllMembers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      const [teamsData, membersData] = await Promise.all([
+        apiServices.getTeams(),
+        apiServices.getAllMembers()
+      ]);
+      setTeams(teamsData);
+      setAllMembers(membersData);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateTeam = async (teamData) => {
+    try {
+      const newTeam = await apiServices.createTeam(teamData);
+      // Backend returns minimal team on create without populated members array, so we refetch
+      await fetchData();
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      console.error("Failed to create team:", error);
+      alert("Failed to create team");
+    }
+  };
+
+  const handleUpdateTeam = async (teamData) => {
+    try {
+      await apiServices.updateTeam(teamData._id, teamData);
+      await fetchData();
+      setIsEditModalOpen(false);
+      setIsAddMemberModalOpen(false);
+    } catch (error) {
+      console.error("Failed to update team:", error);
+      alert("Failed to update team");
+    }
+  };
+
+  const handleDeleteTeam = async (teamId) => {
+    if (!window.confirm("Are you sure you want to delete this team?")) return;
+    try {
+      await apiServices.deleteTeam(teamId);
+      setTeams(teams.filter(t => t._id !== teamId));
+    } catch (error) {
+      console.error("Failed to delete team:", error);
+      alert("Failed to delete team");
+    }
+  };
 
   return (
     <div className="p-8 w-full h-full flex flex-col animate-in fade-in duration-300">
@@ -38,15 +92,15 @@ const Teams = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {teams.map(team => (
-          <div key={team.id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col transition-all hover:shadow-md">
+          <div key={team._id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col transition-all hover:shadow-md">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
                   <Users className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900">{team.name}</h3>
-                  <p className="text-xs text-slate-400">Created {team.date}</p>
+                  <h3 className="font-semibold text-slate-900">{team.teamName}</h3>
+                  <p className="text-xs text-slate-400">Created {new Date(team.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
               <div className="flex space-x-2 text-slate-400">
@@ -56,11 +110,16 @@ const Teams = () => {
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
-                <button className="hover:text-rose-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                <button 
+                  onClick={() => handleDeleteTeam(team._id)}
+                  className="hover:text-rose-600 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
             
-            <p className="text-sm text-slate-600 mb-6">{team.desc}</p>
+            <p className="text-sm text-slate-600 mb-6">{team.description}</p>
             
             <div>
               <div className="flex justify-between items-center mb-3">
@@ -74,18 +133,18 @@ const Teams = () => {
                 </button>
               </div>
               <div className="space-y-2">
-                {team.members.slice(0, expandedTeams[team.id] ? team.members.length : 2).map((member, i) => (
-                  <div key={i} className="flex justify-between items-center text-sm py-2 border-b border-slate-50 last:border-0">
-                    <span className="text-slate-700 font-medium">{member}</span>
+                {team.members.slice(0, expandedTeams[team._id] ? team.members.length : 2).map((member, i) => (
+                  <div key={member._id || i} className="flex justify-between items-center text-sm py-2 border-b border-slate-50 last:border-0">
+                    <span className="text-slate-700 font-medium">{member.name || 'Unknown'}</span>
                   </div>
                 ))}
               </div>
               {team.members.length > 2 && (
                 <button 
-                  onClick={() => toggleTeamExpand(team.id)}
+                  onClick={() => toggleTeamExpand(team._id)}
                   className="w-full mt-3 text-xs font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50/50 hover:bg-indigo-50 py-2 rounded transition-colors"
                 >
-                  {expandedTeams[team.id] ? 'Show less' : `View all ${team.members.length} members`}
+                  {expandedTeams[team._id] ? 'Show less' : `View all ${team.members.length} members`}
                 </button>
               )}
             </div>
@@ -93,26 +152,27 @@ const Teams = () => {
         ))}
       </div>
 
-      <CreateTeamModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
+      <CreateTeamModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+        onSave={handleCreateTeam}
+        allMembers={allMembers}
+      />
       
       <EditTeamModal 
         isOpen={isEditModalOpen} 
         onClose={() => setIsEditModalOpen(false)} 
         team={teamToEdit}
-        onSave={(updatedTeam) => {
-          setTeams(teams.map(t => t.id === updatedTeam.id ? updatedTeam : t));
-          setIsEditModalOpen(false);
-        }}
+        onSave={handleUpdateTeam}
+        allMembers={allMembers}
       />
 
       <AddMemberModal 
         isOpen={isAddMemberModalOpen} 
         onClose={() => setIsAddMemberModalOpen(false)} 
         team={teamToEdit}
-        onSave={(updatedTeam) => {
-          setTeams(teams.map(t => t.id === updatedTeam.id ? updatedTeam : t));
-          setIsAddMemberModalOpen(false);
-        }}
+        onSave={handleUpdateTeam}
+        allMembers={allMembers}
       />
     </div>
   );

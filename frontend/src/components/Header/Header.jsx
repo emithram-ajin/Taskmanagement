@@ -9,6 +9,7 @@ const TopBar = () => {
     switch (path) {
       case '/': return 'Overview';
       case '/teams': return 'Teams';
+      case '/members': return 'Members Directory';
       case '/projects': return 'Projects';
       case '/tasks': return 'Tasks';
       case '/kanban': return 'Kanban Board';

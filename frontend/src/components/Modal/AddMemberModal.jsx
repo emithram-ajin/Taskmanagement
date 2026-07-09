@@ -1,37 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 
-const AddMemberModal = ({ isOpen, onClose, team, onSave }) => {
+const AddMemberModal = ({ isOpen, onClose, team, onSave, allMembers = [] }) => {
   const [selectedMembers, setSelectedMembers] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const allUsers = ['Sarah Chen', 'Marcus Rodriguez', 'Priya Patel', 'James Kim', 'Emma Watson'];
-  
   // Only show users who are not already in the team
-  const nonMembers = allUsers.filter(u => !(team?.members || []).includes(u));
+  const teamMemberIds = team?.members?.map(m => m._id || m) || [];
+  const nonMembers = allMembers.filter(u => !teamMemberIds.includes(u._id));
 
   useEffect(() => {
     if (isOpen) {
       setSelectedMembers([]);
+      setIsSubmitting(false);
     }
   }, [isOpen]);
 
-  const toggleMember = (user) => {
-    if (selectedMembers.includes(user)) {
-      setSelectedMembers(selectedMembers.filter(m => m !== user));
+  const toggleMember = (userId) => {
+    if (selectedMembers.includes(userId)) {
+      setSelectedMembers(selectedMembers.filter(m => m !== userId));
     } else {
-      setSelectedMembers([...selectedMembers, user]);
+      setSelectedMembers([...selectedMembers, userId]);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (team) {
-      onSave({ 
-        ...team, 
-        members: [...team.members, ...selectedMembers] 
+      setIsSubmitting(true);
+      await onSave({ 
+        _id: team._id,
+        teamName: team.teamName,
+        description: team.description,
+        members: [...teamMemberIds, ...selectedMembers] 
       });
+      setIsSubmitting(false);
     }
-    onClose();
   };
 
   return (
@@ -43,14 +47,14 @@ const AddMemberModal = ({ isOpen, onClose, team, onSave }) => {
           <div className="border border-slate-200 rounded-lg p-3 space-y-2 max-h-60 overflow-y-auto bg-white mb-3">
             {nonMembers.length === 0 && <p className="text-sm text-slate-400 italic">All users are already in this team.</p>}
             {nonMembers.map(user => (
-              <label key={user} className="flex items-center space-x-3 text-sm text-slate-700 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors">
+              <label key={user._id} className="flex items-center space-x-3 text-sm text-slate-700 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors">
                 <input 
                   type="checkbox" 
-                  checked={selectedMembers.includes(user)}
-                  onChange={() => toggleMember(user)}
+                  checked={selectedMembers.includes(user._id)}
+                  onChange={() => toggleMember(user._id)}
                   className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer" 
                 />
-                <span>{user}</span>
+                <span>{user.name}</span>
               </label>
             ))}
           </div>

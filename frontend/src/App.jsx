@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Login from './pages/Auth/Login';
 import AdminLayout from './layouts/AdminLayout';
 import UserLayout from './layouts/UserLayout';
@@ -15,17 +15,38 @@ import Dependencies from './pages/Task Details-User/Dependencies';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  useEffect(() => {
+    const userString = localStorage.getItem('user');
+    if (userString) {
+      setCurrentUser(JSON.parse(userString));
+    }
+    setIsInitializing(false);
+  }, []);
+
+  const handleLogin = (user) => {
+    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('token', user.token);
+    localStorage.setItem('role', user.role);
+    setCurrentUser(user);
+  };
 
   const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
     setCurrentUser(null);
   };
 
+  if (isInitializing) return null;
+
   if (!currentUser) {
-    return <Login onLogin={setCurrentUser} />;
+    return <Login onLogin={handleLogin} />;
   }
 
-  // Admin View
-  if (currentUser.role === 'admin') {
+  // Admin / Superadmin View
+  if (currentUser.role === 'admin' || currentUser.role === 'superadmin') {
     return (
       <AdminLayout onLogout={handleLogout}>
         <AppRoutes />

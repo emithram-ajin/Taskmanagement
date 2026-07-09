@@ -60,7 +60,7 @@ const Projects = () => {
   };
 
   return (
-    <div className="p-8 w-full h-full flex flex-col animate-in fade-in duration-300">
+    <div className="p-8 w-full h-full overflow-y-auto animate-in fade-in duration-300">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Project Management</h1>
@@ -82,9 +82,9 @@ const Projects = () => {
           <Loader message="Loading projects..." />
         </div>
       ) : (
-      <div className="space-y-6">
+      <div className="space-y-6 pb-4">
         {projects.map(project => (
-          <div key={project._id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col transition-all hover:shadow-md cursor-pointer">
+          <div key={project._id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col transition-all hover:shadow-md cursor-pointer shrink-0">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-start space-x-4">
                 <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0 mt-1">

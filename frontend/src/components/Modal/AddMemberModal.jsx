@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
+import CustomDropdown from '../Dropdown/CustomDropdown';
 
 const AddMemberModal = ({ isOpen, onClose, team, onSave, allMembers = [] }) => {
   const [selectedMembers, setSelectedMembers] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Only show users who are not already in the team
@@ -12,6 +14,7 @@ const AddMemberModal = ({ isOpen, onClose, team, onSave, allMembers = [] }) => {
   useEffect(() => {
     if (isOpen) {
       setSelectedMembers([]);
+      setSelectedDepartment('');
       setIsSubmitting(false);
     }
   }, [isOpen]);
@@ -43,10 +46,25 @@ const AddMemberModal = ({ isOpen, onClose, team, onSave, allMembers = [] }) => {
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div>
           <p className="text-sm text-slate-500 mb-4">Select the members you want to add to this team.</p>
-          
+          <div className="mb-2 mt-4">
+            <CustomDropdown 
+              value={selectedDepartment} 
+              onChange={e => setSelectedDepartment(e.target.value)} 
+              placeholder="All Departments"
+              options={[
+                { value: '', label: 'All Departments' },
+                { value: 'HR', label: 'HR' },
+                { value: 'IT', label: 'IT' },
+                { value: 'Sales', label: 'Sales' },
+                { value: 'Marketing', label: 'Marketing' }
+              ]}
+            />
+          </div>
           <div className="border border-slate-200 rounded-lg p-3 space-y-2 max-h-60 overflow-y-auto bg-white mb-3">
-            {nonMembers.length === 0 && <p className="text-sm text-slate-400 italic">All users are already in this team.</p>}
-            {nonMembers.map(user => (
+            {nonMembers.filter(u => selectedDepartment === '' || u.department === selectedDepartment).length === 0 && <p className="text-sm text-slate-400 italic">No users available.</p>}
+            {nonMembers
+              .filter(u => selectedDepartment === '' || u.department === selectedDepartment)
+              .map(user => (
               <label key={user._id} className="flex items-center space-x-3 text-sm text-slate-700 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors">
                 <input 
                   type="checkbox" 

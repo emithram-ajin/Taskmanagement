@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
+import CustomDropdown from '../Dropdown/CustomDropdown';
 
 const CreateTaskModal = ({ isOpen, onClose, onSave, allProjects = [], allMembers = [], task = null }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [project, setProject] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('');
   const [assignee, setAssignee] = useState('');
   const [status, setStatus] = useState('assigned');
   const [priority, setPriority] = useState('Medium');
@@ -17,6 +19,7 @@ const CreateTaskModal = ({ isOpen, onClose, onSave, allProjects = [], allMembers
         setTitle(task.title || '');
         setDescription(task.description || '');
         setProject(task.project?._id || task.project || '');
+        setSelectedDepartment(task.assignee?.department || '');
         setAssignee(task.assignee?._id || task.assignee || '');
         setStatus(task.status || 'assigned');
         setPriority(task.priority || 'Medium');
@@ -25,6 +28,7 @@ const CreateTaskModal = ({ isOpen, onClose, onSave, allProjects = [], allMembers
         setTitle('');
         setDescription('');
         setProject('');
+        setSelectedDepartment('');
         setAssignee('');
         setStatus('assigned');
         setPriority('Medium');
@@ -58,40 +62,57 @@ const CreateTaskModal = ({ isOpen, onClose, onSave, allProjects = [], allMembers
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Project</label>
-          <select required value={project} onChange={e => setProject(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow text-slate-700 bg-white">
-            <option value="">Select a project</option>
-            {allProjects.map(p => (
-              <option key={p._id} value={p._id}>{p.projectName}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Assignee</label>
-          <select required value={assignee} onChange={e => setAssignee(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow text-slate-700 bg-white">
-            <option value="">Select an assignee</option>
-            {allMembers.map(m => (
-              <option key={m._id} value={m._id}>{m.name}</option>
-            ))}
-          </select>
+          <CustomDropdown 
+            required 
+            value={project} 
+            onChange={e => setProject(e.target.value)} 
+            placeholder="Select a project"
+            options={allProjects.map(p => ({ value: p._id, label: p.projectName }))}
+          />
         </div>
         <div className="flex space-x-4">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
-            <select required value={status} onChange={e => setStatus(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow text-slate-700 bg-white">
-              <option value="assigned">Assigned / To Do</option>
-              <option value="progress">In Progress</option>
-              <option value="blocker">Blocker</option>
-              <option value="completed">Completed</option>
-            </select>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Department</label>
+            <CustomDropdown 
+              value={selectedDepartment} 
+              onChange={e => setSelectedDepartment(e.target.value)} 
+              placeholder="All Departments"
+              options={[
+                { value: '', label: 'All Departments' },
+                { value: 'HR', label: 'HR' },
+                { value: 'IT', label: 'IT' },
+                { value: 'Sales', label: 'Sales' },
+                { value: 'Marketing', label: 'Marketing' }
+              ]}
+            />
           </div>
           <div className="flex-1">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Priority</label>
-            <select required value={priority} onChange={e => setPriority(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow text-slate-700 bg-white">
-              <option value="Low">Low</option>
-              <option value="Medium">Medium</option>
-              <option value="High">High</option>
-            </select>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Assignee</label>
+            <CustomDropdown 
+              required 
+              value={assignee} 
+              onChange={e => setAssignee(e.target.value)} 
+              placeholder="Select an assignee"
+              options={allMembers
+                .filter(m => selectedDepartment === '' || m.department === selectedDepartment)
+                .map(m => ({ value: m._id, label: m.name }))
+              }
+            />
           </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Priority</label>
+          <CustomDropdown 
+            required 
+            value={priority} 
+            onChange={e => setPriority(e.target.value)} 
+            placeholder="Select priority"
+            options={[
+              { value: 'Low', label: 'Low' },
+              { value: 'Medium', label: 'Medium' },
+              { value: 'High', label: 'High' }
+            ]}
+          />
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Deadline</label>

@@ -180,7 +180,7 @@ const Members = () => {
   };
 
   return (
-    <div className="p-8 w-full h-full flex flex-col animate-in fade-in duration-300">
+    <div className="p-8 w-full h-full overflow-y-auto animate-in fade-in duration-300">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
@@ -204,7 +204,7 @@ const Members = () => {
           <Loader message="Loading members..." />
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex-1 flex flex-col">
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden min-h-0 pb-4">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>

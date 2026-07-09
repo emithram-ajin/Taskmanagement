@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Flag, User } from 'lucide-react';
 import apiServices from '../../services/apiServices';
 import Loader from '../../components/Loader/Loader';
+import CustomDropdown from '../../components/Dropdown/CustomDropdown';
 
 const KanbanBoard = () => {
   const [tasks, setTasks] = useState([]);
@@ -167,16 +168,16 @@ const KanbanBoard = () => {
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Task Board</h1>
           <p className="text-slate-500 mt-1">Drag tasks between columns to update status</p>
         </div>
-        <select 
+        <CustomDropdown 
           value={selectedProjectId}
           onChange={e => setSelectedProjectId(e.target.value)}
-          className="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition-shadow hover:shadow-md cursor-pointer"
-        >
-          <option value="">All Projects</option>
-          {projects.map(p => (
-            <option key={p._id} value={p._id}>{p.projectName}</option>
-          ))}
-        </select>
+          placeholder="All Projects"
+          className="min-w-[200px]"
+          options={[
+            { value: '', label: 'All Projects' },
+            ...projects.map(p => ({ value: p._id, label: p.projectName }))
+          ]}
+        />
       </div>
 
       {isLoading ? (

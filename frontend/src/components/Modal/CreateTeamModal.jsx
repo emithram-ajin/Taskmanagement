@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
+import CustomDropdown from '../Dropdown/CustomDropdown';
 
 const CreateTeamModal = ({ isOpen, onClose, onSave, allMembers = [] }) => {
   const [teamName, setTeamName] = useState('');
   const [description, setDescription] = useState('');
   const [members, setMembers] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -12,6 +14,7 @@ const CreateTeamModal = ({ isOpen, onClose, onSave, allMembers = [] }) => {
       setTeamName('');
       setDescription('');
       setMembers([]);
+      setSelectedDepartment('');
       setIsSubmitting(false);
     }
   }, [isOpen]);
@@ -44,8 +47,24 @@ const CreateTeamModal = ({ isOpen, onClose, onSave, allMembers = [] }) => {
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Team Members</label>
+          <div className="mb-2">
+            <CustomDropdown 
+              value={selectedDepartment} 
+              onChange={e => setSelectedDepartment(e.target.value)} 
+              placeholder="All Departments"
+              options={[
+                { value: '', label: 'All Departments' },
+                { value: 'HR', label: 'HR' },
+                { value: 'IT', label: 'IT' },
+                { value: 'Sales', label: 'Sales' },
+                { value: 'Marketing', label: 'Marketing' }
+              ]}
+            />
+          </div>
           <div className="border border-slate-200 rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
-            {allMembers.map(user => (
+            {allMembers
+              .filter(user => selectedDepartment === '' || user.department === selectedDepartment)
+              .map(user => (
               <label key={user._id} className="flex items-center space-x-3 text-sm text-slate-700 cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors">
                 <input type="checkbox" checked={members.includes(user._id)} onChange={() => toggleMember(user._id)} className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer" />
                 <span>{user.name}</span>

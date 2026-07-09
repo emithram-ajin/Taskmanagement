@@ -38,7 +38,7 @@ export const getAllMembers = async (req, res) => {
       filter.department = department;
     }
 
-    const users = await User.find(filter).select("_id name department");
+    const users = await User.find(filter).select("-password");
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: err.message });

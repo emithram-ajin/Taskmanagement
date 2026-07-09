@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Clock, CheckCircle2, AlertCircle, PlayCircle } from 'lucide-react';
 import CreateTaskModal from '../../components/Modal/CreateTaskModal';
 import apiServices from '../../services/apiServices';
 import Loader from '../../components/Loader/Loader';
+import CustomDropdown from '../../components/Dropdown/CustomDropdown';
 
 const TaskList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editTask, setEditTask] = useState(null);
+
+  const [filterProject, setFilterProject] = useState('');
+  const [filterAssignee, setFilterAssignee] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterPriority, setFilterPriority] = useState('');
 
   const [tasks, setTasks] = useState([]);
   const [allProjects, setAllProjects] = useState([]);
@@ -81,8 +87,16 @@ const TaskList = () => {
     }
   };
 
+  const filteredTasks = tasks.filter(task => {
+    if (filterProject && (task.project?._id !== filterProject && task.project !== filterProject)) return false;
+    if (filterAssignee && (task.assignee?._id !== filterAssignee && task.assignee !== filterAssignee)) return false;
+    if (filterStatus && task.status?.toLowerCase() !== filterStatus.toLowerCase()) return false;
+    if (filterPriority && task.priority?.toLowerCase() !== filterPriority.toLowerCase()) return false;
+    return true;
+  });
+
   return (
-    <div className="p-8 w-full h-full flex flex-col animate-in fade-in duration-300">
+    <div className="p-8 w-full h-full overflow-y-auto animate-in fade-in duration-300">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Task Management</h1>
@@ -99,15 +113,83 @@ const TaskList = () => {
         </button>
       </div>
 
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap gap-4 items-center">
+        <CustomDropdown 
+          value={filterProject} 
+          onChange={e => setFilterProject(e.target.value)} 
+          placeholder="All Projects"
+          className="min-w-[160px] max-w-[200px]"
+          options={[
+            { value: '', label: 'All Projects' },
+            ...allProjects.map(p => ({ value: p._id, label: p.projectName }))
+          ]}
+        />
+
+        <CustomDropdown 
+          value={filterAssignee} 
+          onChange={e => setFilterAssignee(e.target.value)} 
+          placeholder="All Assignees"
+          className="min-w-[160px] max-w-[200px]"
+          options={[
+            { value: '', label: 'All Assignees' },
+            ...allMembers.map(m => ({ value: m._id, label: m.name }))
+          ]}
+        />
+
+        <CustomDropdown 
+          value={filterStatus} 
+          onChange={e => setFilterStatus(e.target.value)} 
+          placeholder="All Statuses"
+          className="min-w-[160px] max-w-[200px]"
+          options={[
+            { value: '', label: 'All Statuses' },
+            { value: 'assigned', label: 'To Do' },
+            { value: 'progress', label: 'In Progress' },
+            { value: 'completed', label: 'Completed' },
+            { value: 'blocker', label: 'Blocker' }
+          ]}
+        />
+
+        <CustomDropdown 
+          value={filterPriority} 
+          onChange={e => setFilterPriority(e.target.value)} 
+          placeholder="All Priorities"
+          className="min-w-[160px] max-w-[200px]"
+          options={[
+            { value: '', label: 'All Priorities' },
+            { value: 'high', label: 'High' },
+            { value: 'medium', label: 'Medium' },
+            { value: 'low', label: 'Low' }
+          ]}
+        />
+        
+        {(filterProject || filterAssignee || filterStatus || filterPriority) && (
+          <button 
+            onClick={() => { setFilterProject(''); setFilterAssignee(''); setFilterStatus(''); setFilterPriority(''); }}
+            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium px-2 py-2"
+          >
+            Clear Filters
+          </button>
+        )}
+      </div>
+
       {isLoading ? (
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex-1 flex items-center justify-center">
           <Loader message="Loading tasks..." />
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex-1">
-          <table className="min-w-full divide-y divide-slate-200">
-            <tbody className="bg-white divide-y divide-slate-100">
-            {tasks.map((task) => (
+        <div className="pb-4">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden min-w-full">
+            <table className="min-w-full divide-y divide-slate-200">
+              <tbody className="bg-white divide-y divide-slate-100">
+            {filteredTasks.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
+                  No tasks found matching your filters.
+                </td>
+              </tr>
+            ) : (
+            filteredTasks.map((task) => (
               <tr key={task._id} className="group hover:bg-slate-50 transition-colors cursor-pointer">
                 <td className="px-6 py-4 flex items-center gap-6">
                   <div className="flex-1 min-w-[200px] max-w-[300px]">
@@ -164,9 +246,10 @@ const TaskList = () => {
                   </div>
                 </td>
               </tr>
-            ))}
+            )))}
           </tbody>
         </table>
+      </div>
       </div>
       )}
 

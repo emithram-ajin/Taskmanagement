@@ -49,31 +49,51 @@ const apiServices = {
   // PROJECTS
   // -------------------------
   getProjects: async () => {
-    // const response = await axiosInstance.get('/projects');
-    // return response.data;
+    const response = await axiosInstance.get('/projects');
+    return response.data;
   },
   
   createProject: async (projectData) => {
-    // const response = await axiosInstance.post('/projects', projectData);
-    // return response.data;
+    const response = await axiosInstance.post('/projects', projectData);
+    return response.data;
+  },
+
+  updateProject: async (projectId, projectData) => {
+    const response = await axiosInstance.put(`/projects/${projectId}`, projectData);
+    return response.data;
+  },
+
+  deleteProject: async (projectId) => {
+    const response = await axiosInstance.delete(`/projects/${projectId}`);
+    return response.data;
   },
 
   // -------------------------
   // TASKS
   // -------------------------
   getTasks: async () => {
-    // const response = await axiosInstance.get('/tasks');
-    // return response.data;
+    const response = await axiosInstance.get('/tasks');
+    return response.data.tasks || response.data;
   },
   
   createTask: async (taskData) => {
-    // const response = await axiosInstance.post('/tasks', taskData);
-    // return response.data;
+    const response = await axiosInstance.post('/tasks', taskData);
+    return response.data;
+  },
+
+  updateTask: async (taskId, taskData) => {
+    const response = await axiosInstance.put(`/tasks/${taskId}`, taskData);
+    return response.data;
+  },
+
+  deleteTask: async (taskId) => {
+    const response = await axiosInstance.delete(`/tasks/${taskId}`);
+    return response.data;
   },
   
   updateTaskStatus: async (taskId, newStatus) => {
-    // const response = await axiosInstance.patch(`/tasks/${taskId}`, { status: newStatus });
-    // return response.data;
+    const response = await axiosInstance.put(`/tasks/${taskId}`, { status: newStatus });
+    return response.data;
   }
 };
 

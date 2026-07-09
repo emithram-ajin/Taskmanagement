@@ -162,14 +162,6 @@ const Login = ({ onLogin }) => {
               {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            className="w-full mt-1 bg-slate-900 hover:bg-slate-800 active:bg-black text-white font-semibold text-sm rounded-full py-3.5 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            Get Started
-          </button>
         </form>
 
       </div>

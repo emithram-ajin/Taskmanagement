@@ -4,6 +4,7 @@ import CreateTeamModal from '../../components/Modal/CreateTeamModal';
 import EditTeamModal from '../../components/Modal/EditTeamModal';
 import AddMemberModal from '../../components/Modal/AddMemberModal';
 import apiServices from '../../services/apiServices';
+import Loader from '../../components/Loader/Loader';
 
 const Teams = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -90,6 +91,11 @@ const Teams = () => {
         </button>
       </div>
 
+      {isLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader message="Loading teams..." />
+        </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {teams.map(team => (
           <div key={team._id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col transition-all hover:shadow-md">
@@ -151,6 +157,7 @@ const Teams = () => {
           </div>
         ))}
       </div>
+      )}
 
       <CreateTeamModal 
         isOpen={isCreateModalOpen} 

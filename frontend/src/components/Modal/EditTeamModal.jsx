@@ -57,8 +57,12 @@ const EditTeamModal = ({ isOpen, onClose, team, onSave, allMembers = [] }) => {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Team Members</label>
           <div className="border border-slate-200 rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto bg-white mb-3">
-            {allMembers.length === 0 && <p className="text-sm text-slate-400 italic">No members available</p>}
-            {allMembers.map(user => (
+            {allMembers.filter(user => (team?.members || []).map(m => m._id || m).includes(user._id)).length === 0 && (
+              <p className="text-sm text-slate-400 italic">No members in this team</p>
+            )}
+            {allMembers
+              .filter(user => (team?.members || []).map(m => m._id || m).includes(user._id))
+              .map(user => (
               <label key={user._id} className="flex items-center space-x-3 text-sm text-slate-700 cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors">
                 <input 
                   type="checkbox" 

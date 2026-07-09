@@ -1,26 +1,50 @@
-import React from 'react';
-import { Clock, CheckCircle, AlertCircle, MessageSquare, Calendar } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Clock, CheckCircle, AlertCircle, MessageSquare, Calendar, Check } from 'lucide-react';
+
+const STATUS_OPTIONS = [
+  { key: 'todo', label: 'To Do' },
+  { key: 'in-progress', label: 'In Progress' },
+  { key: 'done', label: 'Done' },
+];
 
 const UserDashboard = () => {
-  const stats = [
-    { label: 'To Do', value: 1, icon: Clock, iconBg: 'bg-slate-100', iconColor: 'text-slate-500' },
-    { label: 'In Progress', value: 1, icon: Clock, iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
-    { label: 'Completed', value: 0, icon: CheckCircle, iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
-    { label: 'Overdue', value: 2, icon: AlertCircle, iconBg: 'bg-red-100', iconColor: 'text-red-600' },
-  ];
+  // Single source of truth for the two tracked tasks — status changes here
+  // ripple out to Upcoming Deadlines, In Progress, To Do, and Productivity.
+  const [tasks, setTasks] = useState([
+    { id: 1, task: 'API endpoint optimization', project: 'Dashboard Redesign', priority: 'medium', date: 'Apr 25', status: 'in-progress' },
+    { id: 2, task: 'Push notification service', project: 'Mobile App Launch', priority: 'medium', date: 'May 1', status: 'todo' },
+  ]);
+
+  const [openStatusId, setOpenStatusId] = useState(null);
 
   const overdueTasks = ['API endpoint optimization', 'Push notification service'];
   const overdueProjects = ['Dashboard Redesign', 'Mobile App Launch'];
   const activeBlockers = ['Missing database credentials for production migration'];
   const blockerProjects = ['Database migration'];
 
-  const upcomingDeadlines = [
-    { task: 'API endpoint optimization', project: 'Dashboard Redesign', priority: 'medium', date: 'Apr 25' },
-    { task: 'Push notification service', project: 'Mobile App Launch', priority: 'medium', date: 'May 1' },
+  const inProgressList = tasks.filter((t) => t.status === 'in-progress');
+  const todoList = tasks.filter((t) => t.status === 'todo');
+  const doneList = tasks.filter((t) => t.status === 'done');
+
+  const productivity = useMemo(() => {
+    const total = tasks.length;
+    const completed = doneList.length;
+    const active = total - completed;
+    const rate = total === 0 ? 0 : Math.round((completed / total) * 100);
+    return { total, completed, active, rate };
+  }, [tasks, doneList.length]);
+
+  const stats = [
+    { label: 'To Do', value: todoList.length, icon: Clock, iconBg: 'bg-slate-100', iconColor: 'text-slate-500' },
+    { label: 'In Progress', value: inProgressList.length, icon: Clock, iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
+    { label: 'Completed', value: doneList.length, icon: CheckCircle, iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
+    { label: 'Overdue', value: 2, icon: AlertCircle, iconBg: 'bg-red-100', iconColor: 'text-red-600' },
   ];
 
-  const inProgressList = [{ task: 'API endpoint optimization', project: 'Dashboard Redesign' }];
-  const todoList = [{ task: 'Push notification service', project: 'Mobile App Launch' }];
+  const handleStatusChange = (id, status) => {
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
+    setOpenStatusId(null);
+  };
 
   return (
     <div className="pl-6 pr-10 py-8 w-full">
@@ -107,24 +131,52 @@ const UserDashboard = () => {
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 mb-8">
         <h3 className="font-bold text-slate-900 text-xl mb-6">Upcoming Deadlines</h3>
         <div className="divide-y divide-slate-100">
-          {upcomingDeadlines.map(({ task, project, priority, date }) => (
-            <div key={task} className="py-7 first:pt-0 last:pb-0 flex items-center justify-between gap-4">
-              <div>
-                <p className="font-semibold text-slate-900 text-base">{task}</p>
-                <p className="text-slate-500 text-sm mt-0.5">{project}</p>
-                <button className="text-indigo-600 font-semibold text-sm mt-3 hover:underline">
-                  Quick status update →
-                </button>
+          {tasks.map(({ id, task, project, priority, date, status }) => (
+            <div key={id} className="py-7 first:pt-0 last:pb-0">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-semibold text-slate-900 text-base">{task}</p>
+                  <p className="text-slate-500 text-sm mt-0.5">{project}</p>
+                  <button
+                    onClick={() => setOpenStatusId(openStatusId === id ? null : id)}
+                    className="text-indigo-600 font-semibold text-sm mt-3 hover:underline cursor-pointer"
+                  >
+                    Quick status update →
+                  </button>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="px-3 py-1 rounded-md bg-amber-100 text-amber-700 text-xs font-semibold capitalize">
+                    {priority}
+                  </span>
+                  <span className="flex items-center gap-1 text-red-600 text-sm font-medium">
+                    <Calendar size={14} />
+                    {date}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="px-3 py-1 rounded-md bg-amber-100 text-amber-700 text-xs font-semibold capitalize">
-                  {priority}
-                </span>
-                <span className="flex items-center gap-1 text-red-600 text-sm font-medium">
-                  <Calendar size={14} />
-                  {date}
-                </span>
-              </div>
+
+              {/* Segmented status control */}
+              {openStatusId === id && (
+                <div className="mt-4 grid grid-cols-3 rounded-lg overflow-hidden border border-slate-200">
+                    {STATUS_OPTIONS.map((opt) => {
+                        const isActive = status === opt.key;
+                        return (
+                            <button
+                                key={opt.key}
+                                onClick={() => handleStatusChange(id, opt.key)}
+                                className={`flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
+                                    isActive
+                                        ? 'bg-indigo-200 text-indigo-900'
+                                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                                }`}
+                            >
+                                {isActive && <Check size={14} />}
+                                {opt.label}
+                            </button>
+                        );
+                    })}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -135,33 +187,41 @@ const UserDashboard = () => {
         {/* In Progress quick list */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
           <h3 className="font-semibold text-slate-900 text-lg mb-4">In Progress</h3>
-          <ul className="space-y-4">
-            {inProgressList.map(({ task, project }) => (
-              <li key={task} className="flex items-start gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0 mt-1.5" />
-                <div>
-                  <p className="text-[16px] font-semibold text-slate-900">{task}</p>
-                  <p className="text-sm text-slate-500 mt-0.5">{project}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
+          {inProgressList.length > 0 ? (
+            <ul className="space-y-4">
+              {inProgressList.map(({ id, task, project }) => (
+                <li key={id} className="flex items-start gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0 mt-1.5" />
+                  <div>
+                    <p className="text-[16px] font-semibold text-slate-900">{task}</p>
+                    <p className="text-sm text-slate-500 mt-0.5">{project}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-slate-400 text-sm">No tasks in progress</p>
+          )}
         </div>
 
         {/* To Do quick list */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
           <h3 className="font-semibold text-slate-900 text-lg mb-4">To Do</h3>
-          <ul className="space-y-4">
-            {todoList.map(({ task, project }) => (
-              <li key={task} className="flex items-start gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0 mt-1.5" />
-                <div>
-                  <p className="text-[16px] font-semibold text-slate-900">{task}</p>
-                  <p className="text-sm text-slate-500 mt-0.5">{project}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
+          {todoList.length > 0 ? (
+            <ul className="space-y-4">
+              {todoList.map(({ id, task, project }) => (
+                <li key={id} className="flex items-start gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0 mt-1.5" />
+                  <div>
+                    <p className="text-[16px] font-semibold text-slate-900">{task}</p>
+                    <p className="text-sm text-slate-500 mt-0.5">{project}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-slate-400 text-sm">No tasks to do</p>
+          )}
         </div>
 
         {/* My Productivity */}
@@ -169,24 +229,27 @@ const UserDashboard = () => {
           <h3 className="font-semibold text-slate-900 text-lg mb-4">My Productivity</h3>
           <div className="flex items-center justify-between mb-2">
             <span className="text-slate-500 text-sm font-medium">Completion Rate</span>
-            <span className="text-emerald-600 text-sm font-bold">0%</span>
+            <span className="text-emerald-600 text-sm font-bold">{productivity.rate}%</span>
           </div>
           <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden mb-5">
-            <div className="h-full bg-emerald-500 rounded-full" style={{ width: '0%' }} />
+            <div
+              className="h-full bg-emerald-500 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${productivity.rate}%` }}
+            />
           </div>
 
           <div className="space-y-3 pt-1 border-t border-slate-100">
             <div className="flex items-center justify-between pt-3">
               <span className="text-slate-500 text-sm">Total Tasks</span>
-              <span className="text-slate-900 text-sm font-bold">2</span>
+              <span className="text-slate-900 text-sm font-bold">{productivity.total}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-500 text-sm">Completed</span>
-              <span className="text-emerald-600 text-sm font-bold">0</span>
+              <span className="text-emerald-600 text-sm font-bold">{productivity.completed}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-500 text-sm">Active</span>
-              <span className="text-indigo-600 text-sm font-bold">2</span>
+              <span className="text-indigo-600 text-sm font-bold">{productivity.active}</span>
             </div>
           </div>
         </div>

@@ -1,28 +1,124 @@
-import React, { useState } from 'react';
-import { FolderGit2, Plus, X, ChevronDown, Trash2 } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { FolderGit2, Plus, X, ChevronDown, Trash2, Pencil } from 'lucide-react';
 
 const PROJECT_OPTIONS = ['Dashboard Redesign', 'Mobile App Launch', 'API Platform Upgrade'];
+const ALL_PROJECTS = 'All Projects';
 
 function emptyRow() {
     return { id: Date.now() + Math.random(), key: '', value: '' };
 }
 
+// Modern custom dropdown — replaces the plain native <select>.
+function ModernSelect({ value, options, onChange, className = '' }) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
+
+    useEffect(() => {
+        function handleClickOutside(e) {
+            if (ref.current && !ref.current.contains(e.target)) {
+                setOpen(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    return (
+        <div ref={ref} className={`relative ${className}`}>
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className={`w-full flex items-center justify-between gap-3 border rounded-lg px-3.5 py-2.5 text-sm font-medium text-slate-700 bg-white shadow-sm transition-all duration-150 cursor-pointer ${
+                    open
+                        ? 'border-indigo-500 ring-2 ring-indigo-500/40'
+                        : 'border-slate-300 hover:shadow-md hover:border-indigo-300'
+                }`}
+            >
+                <span className="truncate">{value}</span>
+                <ChevronDown
+                    size={16}
+                    className={`text-slate-400 shrink-0 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
+                />
+            </button>
+
+            {open && (
+                <div className="absolute right-0 z-40 mt-1.5 w-full min-w-[200px] bg-white border border-slate-200 rounded-xl shadow-xl p-1.5">
+                    {options.map((option) => {
+                        const isSelected = option === value;
+                        return (
+                            <button
+                                key={option}
+                                type="button"
+                                onClick={() => {
+                                    onChange(option);
+                                    setOpen(false);
+                                }}
+                                className={`w-full text-left px-4 py-2.5 text-sm rounded-lg transition-colors duration-100 cursor-pointer ${
+                                    isSelected
+                                        ? 'bg-indigo-50 text-indigo-700 font-medium'
+                                        : 'text-slate-700 hover:text-indigo-600 hover:bg-slate-50'
+                                }`}
+                            >
+                                {option}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function Dependencies() {
     const [dependencies, setDependencies] = useState([]);
+    const [filterProject, setFilterProject] = useState(ALL_PROJECTS);
+
     const [showModal, setShowModal] = useState(false);
+    const [editingId, setEditingId] = useState(null);
     const [project, setProject] = useState('');
     const [dependencyName, setDependencyName] = useState('');
     const [rows, setRows] = useState([emptyRow(), emptyRow()]);
+
+    const [viewingDep, setViewingDep] = useState(null);
+    const [expandedTags, setExpandedTags] = useState({});
+
+    const toggleTag = (tagId) => {
+        setExpandedTags((prev) => ({ ...prev, [tagId]: !prev[tagId] }));
+    };
+
+    const truncateValue = (value, max = 14) => {
+        if (value.length <= max) return value;
+        return value.slice(0, max) + '…';
+    };
+
+    const filteredDependencies = useMemo(() => {
+        if (filterProject === ALL_PROJECTS) return dependencies;
+        return dependencies.filter((d) => d.project === filterProject);
+    }, [dependencies, filterProject]);
 
     const resetForm = () => {
         setProject('');
         setDependencyName('');
         setRows([emptyRow(), emptyRow()]);
+        setEditingId(null);
     };
 
     const handleClose = () => {
         setShowModal(false);
         resetForm();
+    };
+
+    const handleOpenAdd = () => {
+        resetForm();
+        setShowModal(true);
+    };
+
+    const handleOpenEdit = (dep) => {
+        setEditingId(dep.id);
+        setProject(dep.project);
+        setDependencyName(dep.dependencyName);
+        setRows(dep.description.length > 0 ? dep.description.map((d) => ({ ...d, id: d.id || Date.now() + Math.random() })) : [emptyRow(), emptyRow()]);
+        setShowModal(true);
     };
 
     const handleRowChange = (id, field, value) => {
@@ -42,15 +138,23 @@ export default function Dependencies() {
 
         const description = rows.filter((row) => row.key.trim() || row.value.trim());
 
-        setDependencies((prev) => [
-            ...prev,
-            {
-                id: Date.now(),
-                project,
-                dependencyName,
-                description,
-            },
-        ]);
+        if (editingId) {
+            setDependencies((prev) =>
+                prev.map((dep) =>
+                    dep.id === editingId ? { ...dep, project, dependencyName, description } : dep
+                )
+            );
+        } else {
+            setDependencies((prev) => [
+                ...prev,
+                {
+                    id: Date.now(),
+                    project,
+                    dependencyName,
+                    description,
+                },
+            ]);
+        }
 
         handleClose();
     };
@@ -61,20 +165,30 @@ export default function Dependencies() {
 
     return (
         <div className="flex justify-center px-8 py-6">
-            <div className="w-full max-w-4xl">
+            <div className="w-full max-w-6xl">
                 {/* Page Header */}
-                <div className="mb-6 flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200">
-                        <FolderGit2 size={20} className="text-white" />
+                <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
+                    <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200">
+                            <FolderGit2 size={20} className="text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-slate-900">Dependencies</h1>
+                            <p className="text-slate-500 text-sm">Manage dependencies for this task.</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-slate-900">Dependencies</h1>
-                        <p className="text-slate-500 text-sm">Manage dependencies for this task.</p>
-                    </div>
+
+                    {/* Modern project filter dropdown */}
+                    <ModernSelect
+                        value={filterProject}
+                        options={[ALL_PROJECTS, ...PROJECT_OPTIONS]}
+                        onChange={setFilterProject}
+                        className="min-w-[220px]"
+                    />
                 </div>
 
                 <div className="bg-white rounded-2xl border border-slate-200 p-6 min-h-[460px] flex flex-col shadow-sm">
-                {dependencies.length === 0 ? (
+                {filteredDependencies.length === 0 ? (
                     /* Empty state */
                     <div className="flex-1 flex flex-col items-center justify-center text-center py-16 px-6">
                         <div className="relative mb-6">
@@ -84,14 +198,16 @@ export default function Dependencies() {
                             </div>
                         </div>
                         <h3 className="text-slate-900 font-bold text-lg mb-2">
-                            No dependencies added yet
+                            {dependencies.length === 0
+                                ? 'No dependencies added yet'
+                                : 'No dependencies for this project'}
                         </h3>
                         <p className="text-slate-500 text-sm max-w-sm leading-relaxed mb-7">
                             Add dependencies to track external services, libraries or other projects
                             that this task relies on.
                         </p>
                         <button
-                            onClick={() => setShowModal(true)}
+                            onClick={handleOpenAdd}
                             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm rounded-xl px-6 py-3 shadow-md shadow-indigo-200 hover:shadow-lg hover:shadow-indigo-300 transition-all duration-200 cursor-pointer"
                         >
                             <Plus size={17} strokeWidth={2.5} />
@@ -104,12 +220,14 @@ export default function Dependencies() {
                         <div className="flex items-center justify-between mb-6">
                             <div>
                                 <h3 className="text-slate-900 font-bold text-lg">
-                                    {dependencies.length} {dependencies.length === 1 ? 'Dependency' : 'Dependencies'}
+                                    {filteredDependencies.length} {filteredDependencies.length === 1 ? 'Dependency' : 'Dependencies'}
                                 </h3>
-                                <p className="text-slate-400 text-xs mt-0.5">Tracked for this task</p>
+                                <p className="text-slate-400 text-xs mt-0.5">
+                                    {filterProject === ALL_PROJECTS ? 'Tracked for this task' : `Filtered by ${filterProject}`}
+                                </p>
                             </div>
                             <button
-                                onClick={() => setShowModal(true)}
+                                onClick={handleOpenAdd}
                                 className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm rounded-xl px-4 py-2.5 shadow-md shadow-indigo-200 hover:shadow-lg transition-all duration-200 cursor-pointer"
                             >
                                 <Plus size={16} strokeWidth={2.5} />
@@ -117,69 +235,109 @@ export default function Dependencies() {
                             </button>
                         </div>
 
-                        <div className="space-y-3">
-                            {dependencies.map((dep) => (
-                                <div
-                                    key={dep.id}
-                                    className="group border border-slate-200 rounded-xl px-4 py-3.5 hover:border-indigo-200 hover:bg-indigo-50/30 transition-colors duration-150"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3.5">
-                                            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                                                <FolderGit2 size={17} className="text-indigo-500" />
-                                            </div>
-                                            <div>
-                                                <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                                                    Dependency
-                                                </span>
-                                                <p className="text-sm font-semibold text-slate-900 -mt-0.5">{dep.dependencyName}</p>
-                                                <div className="flex items-center gap-1.5 mt-1.5">
-                                                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                                                        Project:
-                                                    </span>
-                                                    <span className="text-xs font-semibold rounded-full px-2 py-0.5 bg-violet-50 text-violet-600">
-                                                        {dep.project}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => handleRemove(dep.id)}
-                                            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer"
+                        <div className="overflow-x-auto rounded-xl border border-slate-200">
+                            <table className="w-full text-sm border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200">
+                                        <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                                            Dependency
+                                        </th>
+                                        <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                                            Project
+                                        </th>
+                                        <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500 max-w-[280px]">
+                                            Description
+                                        </th>
+                                        <th className="text-right px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500 w-[90px]">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {filteredDependencies.map((dep) => (
+                                        <tr
+                                            key={dep.id}
+                                            className="group hover:bg-indigo-50/30 transition-colors duration-150"
                                         >
-                                            <Trash2 size={15} />
-                                        </button>
-                                    </div>
-
-                                    {dep.description.length > 0 && (
-                                        <div className="mt-3 pl-[54px] flex flex-wrap gap-2">
-                                            {dep.description.map((d, idx) => (
-                                                <span
-                                                    key={idx}
-                                                    className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1"
+                                            <td className="px-4 py-3.5 align-top">
+                                                <button
+                                                    onClick={() => setViewingDep(dep)}
+                                                    className="cursor-pointer"
+                                                    title="View details"
                                                 >
-                                                    <span className="font-semibold text-slate-800">{d.key}</span>
-                                                    <span className="text-slate-400"> : </span>
-                                                    {d.value}
+                                                    <span className="text-sm font-semibold rounded-full px-2.5 py-0.5 bg-indigo-50 text-indigo-600 whitespace-nowrap">
+                                                        {dep.dependencyName}
+                                                    </span>
+                                                </button>
+                                            </td>
+                                            <td className="px-4 py-3.5 align-top">
+                                                <span className="text-sm font-semibold rounded-full px-2.5 py-0.5 bg-violet-50 text-violet-600 whitespace-nowrap">
+                                                    {dep.project}
                                                 </span>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
+                                            </td>
+                                            <td className="px-4 py-3.5 align-top">
+                                                {dep.description.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {dep.description.map((d, idx) => {
+                                                            const tagId = `${dep.id}-${idx}`;
+                                                            const isExpanded = !!expandedTags[tagId];
+                                                            return (
+                                                                <button
+                                                                    key={idx}
+                                                                    onClick={() => toggleTag(tagId)}
+                                                                    className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 hover:bg-slate-100 hover:border-slate-300 transition-colors cursor-pointer max-w-[220px]"
+                                                                    title={isExpanded ? 'Click to collapse' : 'Click to view full value'}
+                                                                >
+                                                                    <span className="font-semibold text-slate-800">{d.key}</span>
+                                                                    <span className="text-slate-400"> : </span>
+                                                                    <span className={isExpanded ? 'break-all' : ''}>
+                                                                        {isExpanded ? d.value : truncateValue(d.value)}
+                                                                    </span>
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400">—</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3.5 align-top">
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <button
+                                                        onClick={() => handleOpenEdit(dep)}
+                                                        className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-slate-400 hover:bg-indigo-50 hover:text-indigo-500 transition-colors cursor-pointer"
+                                                        title="Edit"
+                                                    >
+                                                        <Pencil size={15} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleRemove(dep.id)}
+                                                        className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 size={15} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </>
                 )}
                 </div>
             </div>
 
-            {/* Add Dependency modal */}
+            {/* Add / Edit Dependency modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] px-4">
-                    <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+                    <div className="bg-white rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col">
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 shrink-0">
-                            <h3 className="font-semibold text-slate-900 text-lg">Add Dependency</h3>
+                            <h3 className="font-semibold text-slate-900 text-lg">
+                                {editingId ? 'Edit Dependency' : 'Add Dependency'}
+                            </h3>
                             <button
                                 onClick={handleClose}
                                 className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
@@ -190,24 +348,17 @@ export default function Dependencies() {
 
                         {/* Body */}
                         <div className="px-6 py-5 overflow-y-auto flex flex-col gap-5">
-                            {/* Project select */}
+                            {/* Project select — modern dropdown */}
                             <div>
                                 <label className="block text-sm font-semibold text-slate-800 mb-1.5">
                                     Project <span className="text-red-500">*</span>
                                 </label>
-                                <div className="relative">
-                                    <select
-                                        value={project}
-                                        onChange={(e) => setProject(e.target.value)}
-                                        className="w-full appearance-none border border-slate-300 rounded-lg px-3 py-2.5 pr-9 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-                                    >
-                                        <option value="" disabled>Select Project</option>
-                                        {PROJECT_OPTIONS.map((p) => (
-                                            <option key={p} value={p}>{p}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                </div>
+                                <ModernSelect
+                                    value={project || 'Select Project'}
+                                    options={PROJECT_OPTIONS}
+                                    onChange={setProject}
+                                    className="w-full"
+                                />
                             </div>
 
                             {/* Dependency input */}
@@ -302,7 +453,91 @@ export default function Dependencies() {
                                 disabled={!project || !dependencyName}
                                 className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                             >
-                                Submit
+                                {editingId ? 'Save Changes' : 'Submit'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* View details modal (opened by clicking the dependency icon) */}
+            {viewingDep && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] px-4">
+                    <div className="bg-white rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col">
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 shrink-0">
+                            <h3 className="font-semibold text-slate-900 text-lg">Dependency Details</h3>
+                            <button
+                                onClick={() => setViewingDep(null)}
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="px-6 py-5 overflow-y-auto flex flex-col gap-5">
+                            <div className="flex items-center gap-3.5">
+                                <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                                    <FolderGit2 size={20} className="text-indigo-500" />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                                            Dependency:
+                                        </span>
+                                        <span className="text-sm font-semibold rounded-full px-2.5 py-0.5 bg-indigo-50 text-indigo-600">
+                                            {viewingDep.dependencyName}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                                            Project:
+                                        </span>
+                                        <span className="text-sm font-semibold rounded-full px-2.5 py-0.5 bg-violet-50 text-violet-600">
+                                            {viewingDep.project}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400 block mb-2">
+                                    Description
+                                </span>
+                                {viewingDep.description.length > 0 ? (
+                                    <div className="border border-slate-200 rounded-xl overflow-hidden">
+                                        {viewingDep.description.map((d, idx) => (
+                                            <div
+                                                key={idx}
+                                                className={`grid grid-cols-2 px-3.5 py-2.5 text-sm ${
+                                                    idx % 2 === 1 ? 'bg-slate-50' : ''
+                                                }`}
+                                            >
+                                                <span className="font-semibold text-slate-800">{d.key}</span>
+                                                <span className="text-slate-600">{d.value}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-slate-400 text-sm">No description added.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0">
+                            <button
+                                onClick={() => setViewingDep(null)}
+                                className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                            >
+                                Close
+                            </button>
+                            <button
+                                onClick={() => {
+                                    handleOpenEdit(viewingDep);
+                                    setViewingDep(null);
+                                }}
+                                className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors cursor-pointer"
+                            >
+                                Edit
                             </button>
                         </div>
                     </div>

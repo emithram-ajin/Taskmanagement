@@ -2,7 +2,7 @@ import Project from "../models/Project.js";
 import Team from "../models/Team.js";
 
 export const createProject = async (req, res) => {
-  const { projectName, description, startDate, endDate, assignedTeams } = req.body;
+  const { projectName, description, startDate, endDate, assignedTeams, status } = req.body;
   try {
     if (!projectName || !description || !startDate || !endDate) {
       return res.status(400).json({ message: "Project name, description, start date and end date are required" });
@@ -14,6 +14,7 @@ export const createProject = async (req, res) => {
       startDate,
       endDate,
       assignedTeams: assignedTeams || [],
+      status: status || "Assigned",
       createdBy: req.user._id,
     });
 
@@ -26,7 +27,12 @@ export const createProject = async (req, res) => {
 
 export const getProjects = async (req, res) => {
   try {
-    const projects = await Project.find({})
+    const { status } = req.query;
+    const query = {};
+    if (status) {
+      query.status = status;
+    }
+    const projects = await Project.find(query)
       .populate("assignedTeams", "teamName")
       .populate("createdBy", "name email");
     res.json(projects);
@@ -49,7 +55,7 @@ export const getProjectById = async (req, res) => {
 
 export const updateProject = async (req, res) => {
   try {
-    const { projectName, description, startDate, endDate, assignedTeams } = req.body;
+    const { projectName, description, startDate, endDate, assignedTeams, status } = req.body;
     const project = await Project.findById(req.params.projectId);
     
     if (!project) return res.status(404).json({ message: "Project not found" });
@@ -59,6 +65,7 @@ export const updateProject = async (req, res) => {
     if (startDate) project.startDate = startDate;
     if (endDate) project.endDate = endDate;
     if (Array.isArray(assignedTeams)) project.assignedTeams = assignedTeams;
+    if (status) project.status = status;
 
     await project.save();
     const populatedProject = await Project.findById(project._id).populate("assignedTeams", "teamName").populate("createdBy", "name email");

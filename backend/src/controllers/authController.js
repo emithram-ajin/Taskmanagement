@@ -57,3 +57,13 @@ export const deleteUser = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+export const getDepartments = async (req, res) => {
+  try {
+    // Get distinct department values that are actually used by users in the DB
+    const departments = await User.distinct("department", { department: { $ne: null } });
+    res.json({ departments });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

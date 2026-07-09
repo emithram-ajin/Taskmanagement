@@ -6,7 +6,8 @@ const projectSchema = new mongoose.Schema({
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },
   assignedTeams: [{ type: mongoose.Schema.Types.ObjectId, ref: "Team" }],
+  status: { type: String, enum: ["Assigned", "In Progress", "Completed"], default: "Assigned" },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 }, { timestamps: true });
 
-export default mongoose.model("Project", projectSchema);
+export default mongoose.models.Project || mongoose.model("Project", projectSchema);

@@ -1,6 +1,7 @@
 import express from "express";
 import {getAllMembers} from "../controllers/authController.js";
 import { createTeam, getTeams, addMemberToTeam, updateTeam, deleteTeam } from "../controllers/teamController.js";
+import { adminGetDependencies, adminGetDependencyById } from "../controllers/adminController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { authorizeRoles } from "../middleware/rbacMiddleware.js";
 
@@ -15,4 +16,8 @@ router.post("/team/add-member", protect, authorizeRoles("superadmin", "admin"), 
 router.put("/team/:teamId", protect, authorizeRoles("superadmin", "admin"), updateTeam);
 router.delete("/team/:teamId", protect, authorizeRoles("superadmin", "admin"), deleteTeam);
 
-export default router;
+// Dependency routes (admin only)
+router.get("/dependencies", protect, authorizeRoles("superadmin", "admin"), adminGetDependencies);
+router.get("/dependencies/:id", protect, authorizeRoles("superadmin", "admin"), adminGetDependencyById);
+
+export default router;

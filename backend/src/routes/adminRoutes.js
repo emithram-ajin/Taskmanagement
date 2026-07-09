@@ -2,6 +2,7 @@ import express from "express";
 import {getAllMembers} from "../controllers/authController.js";
 import { createTeam, getTeams, addMemberToTeam, updateTeam, deleteTeam } from "../controllers/teamController.js";
 import { adminGetDependencies, adminGetDependencyById } from "../controllers/adminController.js";
+import { adminGetScrums, adminGetScrumById } from "../controllers/adminController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { authorizeRoles } from "../middleware/rbacMiddleware.js";
 
@@ -17,7 +18,11 @@ router.put("/team/:teamId", protect, authorizeRoles("superadmin", "admin"), upda
 router.delete("/team/:teamId", protect, authorizeRoles("superadmin", "admin"), deleteTeam);
 
 // Dependency routes (admin only)
-router.get("/dependencies", protect, authorizeRoles("superadmin", "admin"), adminGetDependencies);
+router.get("/dependencies",     protect, authorizeRoles("superadmin", "admin"), adminGetDependencies);
 router.get("/dependencies/:id", protect, authorizeRoles("superadmin", "admin"), adminGetDependencyById);
 
-export default router;
+// Scrum routes (admin only)
+router.get("/scrums",     protect, authorizeRoles("superadmin", "admin"), adminGetScrums);
+router.get("/scrums/:id", protect, authorizeRoles("superadmin", "admin"), adminGetScrumById);
+
+export default router;

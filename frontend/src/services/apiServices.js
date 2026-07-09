@@ -8,7 +8,7 @@ const apiServices = {
     const response = await axiosInstance.get('/admin/teams');
     return response.data;
   },
-  
+
   createTeam: async (teamData) => {
     const response = await axiosInstance.post('/admin/team', teamData);
     return response.data;
@@ -32,7 +32,7 @@ const apiServices = {
     const response = await axiosInstance.post('/auth/register', userData);
     return response.data;
   },
-  
+
   getAllMembers: async () => {
     const response = await axiosInstance.get('/admin/members');
     return response.data;
@@ -42,7 +42,7 @@ const apiServices = {
     const response = await axiosInstance.delete(`/auth/${userId}`);
     return response.data;
   },
-  
+
 
 
   // -------------------------
@@ -52,7 +52,7 @@ const apiServices = {
     const response = await axiosInstance.get('/projects');
     return response.data;
   },
-  
+
   createProject: async (projectData) => {
     const response = await axiosInstance.post('/projects', projectData);
     return response.data;
@@ -75,7 +75,7 @@ const apiServices = {
     const response = await axiosInstance.get('/tasks');
     return response.data.tasks || response.data;
   },
-  
+
   createTask: async (taskData) => {
     const response = await axiosInstance.post('/tasks', taskData);
     return response.data;
@@ -90,7 +90,7 @@ const apiServices = {
     const response = await axiosInstance.delete(`/tasks/${taskId}`);
     return response.data;
   },
-  
+
   updateTaskStatus: async (taskId, newStatus) => {
     const response = await axiosInstance.put(`/tasks/${taskId}`, { status: newStatus });
     return response.data;

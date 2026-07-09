@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { FolderGit2, Plus, X, ChevronDown, Trash2, Pencil } from 'lucide-react';
+import { FolderGit2, Plus, X, ChevronDown, Trash2, Pencil, Loader2 } from 'lucide-react';
+import userapiservicer from '../../services/userapiServices';
+
 
 const PROJECT_OPTIONS = ['Dashboard Redesign', 'Mobile App Launch', 'API Platform Upgrade'];
 const ALL_PROJECTS = 'All Projects';
@@ -8,7 +10,21 @@ function emptyRow() {
     return { id: Date.now() + Math.random(), key: '', value: '' };
 }
 
-// Modern custom dropdown — replaces the plain native <select>.
+// Maps a backend dependency doc into the shape this component's UI uses.
+function normalizeDependency(dep) {
+    return {
+        id: dep._id,
+        project: dep.projectName,
+        dependencyName: dep.dependencyName,
+        description: (dep.attributes || []).map((a) => ({
+            id: Date.now() + Math.random(),
+            key: a.key,
+            value: a.value,
+        })),
+    };
+}
+
+// ModernSelect component unchanged — keep exactly as you have it
 function ModernSelect({ value, options, onChange, className = '' }) {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
@@ -71,6 +87,10 @@ function ModernSelect({ value, options, onChange, className = '' }) {
 
 export default function Dependencies() {
     const [dependencies, setDependencies] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
+
     const [filterProject, setFilterProject] = useState(ALL_PROJECTS);
 
     const [showModal, setShowModal] = useState(false);
@@ -81,6 +101,26 @@ export default function Dependencies() {
 
     const [viewingDep, setViewingDep] = useState(null);
     const [expandedTags, setExpandedTags] = useState({});
+
+    // --- Fetch dependencies from API ---
+    const fetchDependencies = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await userapiservicer.getDependencies();
+            const normalized = (data.dependencies || []).map(normalizeDependency);
+            setDependencies(normalized);
+        } catch (err) {
+            console.error('Failed to fetch dependencies:', err);
+            setError(err?.response?.data?.message || 'Failed to load dependencies');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchDependencies();
+    }, []);
 
     const toggleTag = (tagId) => {
         setExpandedTags((prev) => ({ ...prev, [tagId]: !prev[tagId] }));
@@ -133,33 +173,46 @@ export default function Dependencies() {
         setRows((prev) => prev.filter((row) => row.id !== id));
     };
 
-    const handleSubmit = () => {
+    // --- Submit to API (create only — no update endpoint given yet) ---
+    const handleSubmit = async () => {
         if (!project || !dependencyName) return;
 
-        const description = rows.filter((row) => row.key.trim() || row.value.trim());
+        const attributes = rows
+            .filter((row) => row.key.trim() || row.value.trim())
+            .map((row) => ({ key: row.key.trim(), value: row.value.trim() }));
 
-        if (editingId) {
-            setDependencies((prev) =>
-                prev.map((dep) =>
-                    dep.id === editingId ? { ...dep, project, dependencyName, description } : dep
-                )
-            );
-        } else {
-            setDependencies((prev) => [
-                ...prev,
-                {
-                    id: Date.now(),
-                    project,
+        setSubmitting(true);
+        setError(null);
+        try {
+            if (editingId) {
+                // No PUT/update endpoint provided yet — for now just update locally.
+                // Replace with a real API call once an update endpoint exists.
+                setDependencies((prev) =>
+                    prev.map((dep) =>
+                        dep.id === editingId
+                            ? { ...dep, project, dependencyName, description: attributes }
+                            : dep
+                    )
+                );
+            } else {
+                await userapiservicer.postDependency({
+                    projectName: project,
                     dependencyName,
-                    description,
-                },
-            ]);
+                    attributes,
+                });
+                await fetchDependencies(); // refresh list from server
+            }
+            handleClose();
+        } catch (err) {
+            console.error('Failed to save dependency:', err);
+            setError(err?.response?.data?.message || 'Failed to save dependency');
+        } finally {
+            setSubmitting(false);
         }
-
-        handleClose();
     };
 
     const handleRemove = (id) => {
+        // No delete endpoint provided yet — remove locally only.
         setDependencies((prev) => prev.filter((dep) => dep.id !== id));
     };
 
@@ -178,7 +231,6 @@ export default function Dependencies() {
                         </div>
                     </div>
 
-                    {/* Modern project filter dropdown */}
                     <ModernSelect
                         value={filterProject}
                         options={[ALL_PROJECTS, ...PROJECT_OPTIONS]}
@@ -188,7 +240,16 @@ export default function Dependencies() {
                 </div>
 
                 <div className="bg-white rounded-2xl border border-slate-200 p-6 min-h-[460px] flex flex-col shadow-sm">
-                {filteredDependencies.length === 0 ? (
+                {loading ? (
+                    <div className="flex-1 flex items-center justify-center gap-2 text-slate-400 text-sm">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Loading dependencies...
+                    </div>
+                ) : error ? (
+                    <div className="flex-1 flex items-center justify-center text-rose-500 text-sm">
+                        {error}
+                    </div>
+                ) : filteredDependencies.length === 0 ? (
                     /* Empty state */
                     <div className="flex-1 flex flex-col items-center justify-center text-center py-16 px-6">
                         <div className="relative mb-6">
@@ -333,7 +394,6 @@ export default function Dependencies() {
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] px-4">
                     <div className="bg-white rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col">
-                        {/* Header */}
                         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 shrink-0">
                             <h3 className="font-semibold text-slate-900 text-lg">
                                 {editingId ? 'Edit Dependency' : 'Add Dependency'}
@@ -346,9 +406,13 @@ export default function Dependencies() {
                             </button>
                         </div>
 
-                        {/* Body */}
                         <div className="px-6 py-5 overflow-y-auto flex flex-col gap-5">
-                            {/* Project select — modern dropdown */}
+                            {error && (
+                                <div className="text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+                                    {error}
+                                </div>
+                            )}
+
                             <div>
                                 <label className="block text-sm font-semibold text-slate-800 mb-1.5">
                                     Project <span className="text-red-500">*</span>
@@ -361,7 +425,6 @@ export default function Dependencies() {
                                 />
                             </div>
 
-                            {/* Dependency input */}
                             <div>
                                 <label className="block text-sm font-semibold text-slate-800 mb-1.5">
                                     Dependency <span className="text-red-500">*</span>
@@ -375,7 +438,6 @@ export default function Dependencies() {
                                 />
                             </div>
 
-                            {/* Description key/value table */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <label className="block text-sm font-semibold text-slate-800">
@@ -440,7 +502,6 @@ export default function Dependencies() {
                             </div>
                         </div>
 
-                        {/* Footer */}
                         <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 shrink-0">
                             <button
                                 onClick={handleClose}
@@ -450,9 +511,10 @@ export default function Dependencies() {
                             </button>
                             <button
                                 onClick={handleSubmit}
-                                disabled={!project || !dependencyName}
-                                className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                disabled={!project || !dependencyName || submitting}
+                                className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-2"
                             >
+                                {submitting && <Loader2 size={14} className="animate-spin" />}
                                 {editingId ? 'Save Changes' : 'Submit'}
                             </button>
                         </div>
@@ -460,7 +522,7 @@ export default function Dependencies() {
                 </div>
             )}
 
-            {/* View details modal (opened by clicking the dependency icon) */}
+            {/* View details modal — unchanged */}
             {viewingDep && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] px-4">
                     <div className="bg-white rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col">

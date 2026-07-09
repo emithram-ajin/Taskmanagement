@@ -1,29 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Pencil, X, ChevronDown, Check } from "lucide-react";
+import { Pencil, X, ChevronDown, Check, Loader2 } from "lucide-react";
+import userapiservicer from "../../services/userapiServices";
 
-// Sample data — replace with props / API data in your real app
-const initialTasks = [
-    {
-        id: 1,
-        title: "API endpoint optimization",
-        description: "Improve response times for dashboard APIs",
-        project: "Dashboard Redesign",
-        assignee: "Priya Patel",
-        status: "in progress",
-        priority: "medium",
-        deadline: "25-04-2026",
-    },
-    {
-        id: 2,
-        title: "Push notification service",
-        description: "Implement push notifications for iOS and Android",
-        project: "Mobile App Launch",
-        assignee: "Priya Patel",
-        status: "todo",
-        priority: "medium",
-        deadline: "01-05-2026",
-    },
-];
+
+
 
 const PROJECT_OPTIONS = ["Dashboard Redesign", "Mobile App Launch", "Q2 Campaign"];
 const ASSIGNEE_OPTIONS = ["Priya Patel", "Sarah", "James", "Marcus", "Emma"];
@@ -85,7 +65,6 @@ function ModernSelect({ value, options, onChange, placeholder = "Select..." }) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // Normalize options to { value, label } objects
     const normalized = options.map((o) =>
         typeof o === "string" ? { value: o, label: o } : o
     );
@@ -138,10 +117,49 @@ function ModernSelect({ value, options, onChange, placeholder = "Select..." }) {
     );
 }
 
+// Normalize a task returned by the API (populated fields) into the flat
+// shape this table's UI expects.
+function normalizeTask(task) {
+    return {
+        id: task._id,
+        title: task.title,
+        description: task.description,
+        project: task.project?.projectName || "—",
+        assignee: task.assignee?.name || "Unassigned",
+        status: task.status,
+        priority: task.priority,
+        deadline: task.deadline
+            ? new Date(task.deadline).toLocaleDateString("en-GB").replace(/\//g, "-")
+            : "—",
+    };
+}
+
 export default function TaskDetails() {
-    const [tasks, setTasks] = useState(initialTasks);
+    const [tasks, setTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
     const [editingTask, setEditingTask] = useState(null);
     const [form, setForm] = useState(null);
+
+    const fetchMyTasks = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await userapiservicer.getMyTasks();
+            const normalized = (data.tasks || []).map(normalizeTask);
+            setTasks(normalized);
+        } catch (err) {
+            console.error("Failed to fetch tasks:", err);
+            setError(err?.response?.data?.message || "Failed to load tasks");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchMyTasks();
+    }, []);
 
     const openEditModal = (task) => {
         alert("Coming soon");
@@ -197,7 +215,34 @@ export default function TaskDetails() {
                         </tr>
                     </thead>
                     <tbody>
-                        {tasks.map((task, i) => (
+                        {loading && (
+                            <tr>
+                                <td colSpan={7} className="px-6 py-10 text-center text-gray-400">
+                                    <div className="flex items-center justify-center gap-2 text-sm">
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Loading tasks...
+                                    </div>
+                                </td>
+                            </tr>
+                        )}
+
+                        {!loading && error && (
+                            <tr>
+                                <td colSpan={7} className="px-6 py-10 text-center text-rose-500 text-sm">
+                                    {error}
+                                </td>
+                            </tr>
+                        )}
+
+                        {!loading && !error && tasks.length === 0 && (
+                            <tr>
+                                <td colSpan={7} className="px-6 py-10 text-center text-gray-400 text-sm">
+                                    No tasks assigned to you yet.
+                                </td>
+                            </tr>
+                        )}
+
+                        {!loading && !error && tasks.map((task, i) => (
                             <tr
                                 key={task.id}
                                 className={i !== tasks.length - 1 ? "border-b border-gray-100" : ""}
@@ -258,7 +303,6 @@ export default function TaskDetails() {
                         </div>
 
                         <div className="flex flex-col gap-5">
-                            {/* Task Title */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-800 mb-2">
                                     Task Title
@@ -271,7 +315,6 @@ export default function TaskDetails() {
                                 />
                             </div>
 
-                            {/* Description */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-800 mb-2">
                                     Description
@@ -284,7 +327,6 @@ export default function TaskDetails() {
                                 />
                             </div>
 
-                            {/* Project */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-800 mb-2">
                                     Project
@@ -296,7 +338,6 @@ export default function TaskDetails() {
                                 />
                             </div>
 
-                            {/* Assignee */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-800 mb-2">
                                     Assignee
@@ -308,7 +349,6 @@ export default function TaskDetails() {
                                 />
                             </div>
 
-                            {/* Status + Priority */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-800 mb-2">
@@ -332,7 +372,6 @@ export default function TaskDetails() {
                                 </div>
                             </div>
 
-                            {/* Deadline */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-800 mb-2">
                                     Deadline
@@ -346,7 +385,6 @@ export default function TaskDetails() {
                                 />
                             </div>
 
-                            {/* Actions */}
                             <div className="flex gap-3 mt-1">
                                 <button
                                     onClick={handleUpdate}

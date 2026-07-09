@@ -2,7 +2,7 @@ import Scrum from "../../models/Scrum.js";
 
 export const createScrum = async (req, res) => {
   try {
-    const { doYesterday, doToday, blockers } = req.body;
+    const { doYesterday, doToday, blockers, project } = req.body;
 
     // --- Validation ---
     if (!doYesterday || !doYesterday.trim()) {
@@ -15,8 +15,11 @@ export const createScrum = async (req, res) => {
         .status(400)
         .json({ message: "Please describe what you plan to do today (doToday)." });
     }
+    if (!project) {
+      return res.status(400).json({ message: "Project ID is required." });
+    }
 
-    // Prevent duplicate submission for the same day
+    // Prevent duplicate submission for the same day & same project
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
@@ -24,12 +27,13 @@ export const createScrum = async (req, res) => {
 
     const existing = await Scrum.findOne({
       submittedBy: req.user._id,
+      project,
       date: { $gte: todayStart, $lte: todayEnd },
     });
 
     if (existing) {
       return res.status(409).json({
-        message: "You have already submitted a scrum for today. Use PUT to update it.",
+        message: "You have already submitted a scrum for this project today. Use PUT to update it.",
         scrumId: existing._id,
       });
     }
@@ -39,11 +43,14 @@ export const createScrum = async (req, res) => {
       doToday: doToday.trim(),
       blockers: blockers ? blockers.trim() : "None",
       submittedBy: req.user._id,
+      project,
     });
+
+    const populated = await scrum.populate("project", "projectName status");
 
     return res.status(201).json({
       message: "Scrum standup submitted successfully.",
-      scrum,
+      scrum: populated,
     });
   } catch (err) {
     return res.status(500).json({ message: err.message });
@@ -53,7 +60,7 @@ export const createScrum = async (req, res) => {
 
 export const getMyScrums = async (req, res) => {
   try {
-    const { date, page, limit } = req.query;
+    const { date, project, page, limit } = req.query;
 
     const query = { submittedBy: req.user._id };
 
@@ -66,6 +73,11 @@ export const getMyScrums = async (req, res) => {
       query.date = { $gte: dayStart, $lte: dayEnd };
     }
 
+    // Filter by project if provided
+    if (project) {
+      query.project = project;
+    }
+
     // Pagination
     const pageNum  = parseInt(page)  || 1;
     const limitNum = parseInt(limit) || 10;
@@ -75,6 +87,7 @@ export const getMyScrums = async (req, res) => {
 
     const scrums = await Scrum.find(query)
       .populate("submittedBy", "name email department")
+      .populate("project", "projectName status")
       .sort({ date: -1 }) // most recent first
       .skip(skipNum)
       .limit(limitNum);
@@ -94,10 +107,9 @@ export const getMyScrums = async (req, res) => {
 
 export const getScrumById = async (req, res) => {
   try {
-    const scrum = await Scrum.findById(req.params.id).populate(
-      "submittedBy",
-      "name email department"
-    );
+    const scrum = await Scrum.findById(req.params.id)
+      .populate("submittedBy", "name email department")
+      .populate("project", "projectName status");
 
     if (!scrum) {
       return res.status(404).json({ message: "Scrum entry not found." });
@@ -128,7 +140,7 @@ export const updateScrum = async (req, res) => {
       return res.status(403).json({ message: "Access denied. Not your scrum entry." });
     }
 
-    const { doYesterday, doToday, blockers } = req.body;
+    const { doYesterday, doToday, blockers, project } = req.body;
 
     // Update only provided fields
     if (doYesterday !== undefined) {
@@ -145,6 +157,9 @@ export const updateScrum = async (req, res) => {
     }
     if (blockers !== undefined) {
       scrum.blockers = blockers.trim() || "None";
+    }
+    if (project !== undefined) {
+      scrum.project = project;
     }
 
     const updated = await scrum.save();

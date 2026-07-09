@@ -30,6 +30,14 @@ const scrumSchema = new mongoose.Schema(
       required: true,
     },
 
+    // Project this standup is linked to
+    project: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Project",
+      required: [true, "Project is required."],
+    },
+
+
     // Date of the standup entry (defaults to today)
     date: {
       type: Date,

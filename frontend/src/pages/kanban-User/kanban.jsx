@@ -126,11 +126,10 @@ function ModernSelect({ value, options, onChange }) {
             <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
-                className={`w-full flex items-center justify-between gap-3 border rounded-lg px-4 py-2 text-sm text-slate-700 bg-white shadow-sm transition-all duration-150 cursor-pointer ${
-                    open
+                className={`w-full flex items-center justify-between gap-3 border rounded-lg px-4 py-2 text-sm text-slate-700 bg-white shadow-sm transition-all duration-150 cursor-pointer ${open
                         ? "border-indigo-500 ring-2 ring-indigo-500/40"
                         : "border-slate-300 hover:shadow-md hover:border-indigo-300"
-                }`}
+                    }`}
             >
                 <span className="truncate">{value}</span>
                 <ChevronDown
@@ -151,11 +150,10 @@ function ModernSelect({ value, options, onChange }) {
                                     onChange(option);
                                     setOpen(false);
                                 }}
-                                className={`w-full text-left px-4 py-2.5 text-sm rounded-lg transition-colors duration-100 ${
-                                    isSelected
+                                className={`w-full text-left px-4 py-2.5 text-sm rounded-lg transition-colors duration-100 ${isSelected
                                         ? "bg-indigo-50 text-indigo-700 font-medium"
                                         : "text-slate-700 hover:text-indigo-600"
-                                }`}
+                                    }`}
                             >
                                 {option}
                             </button>
@@ -176,9 +174,8 @@ function TaskCard({ task, onDragStart, style }) {
             draggable
             onDragStart={(e) => onDragStart(e, task.id)}
             style={style}
-            className={`tb-card-in bg-white rounded-xl border p-4 cursor-grab active:cursor-grabbing hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 select-none ${
-                isBlocked ? "border-rose-200 hover:border-rose-300" : "border-slate-200 hover:border-indigo-200"
-            }`}
+            className={`tb-card-in bg-white rounded-xl border p-4 cursor-grab active:cursor-grabbing hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 select-none ${isBlocked ? "border-rose-200 hover:border-rose-300" : "border-slate-200 hover:border-indigo-200"
+                }`}
         >
             {/* Title row */}
             <div className="flex items-start justify-between gap-2 mb-1.5">
@@ -338,9 +335,19 @@ export default function TaskBoard() {
                                     </div>
                                 ))}
 
-                                {colTasks.length === 0 && (
+                                {colTasks.length === 0 && col.key === "blocker" && (
+                                   <div className="tb-empty-in bg-white rounded-xl border border-dashed border-rose-200 p-4 w-full h-38 flex flex-col items-center justify-center text-center gap-1.5">
+                                        <div className="w-9 h-9 rounded-full bg-rose-50 flex items-center justify-center">
+                                            <AlertTriangle className="w-4 h-4 text-rose-300" />
+                                        </div>
+                                        <p className="text-[13px] font-semibold text-slate-500">No reported blockers</p>
+                                        <p className="text-[12px] text-slate-400">Everything's running smoothly</p>
+                                    </div>
+                                )}
+
+                                {colTasks.length === 0 && col.key !== "blocker" && (
                                     <div className="tb-empty-in flex-1 flex items-center justify-center text-slate-400 text-sm">
-                                        {col.key === "blocker" ? "No blockers" : "No tasks"}
+                                        No tasks
                                     </div>
                                 )}
                             </div>

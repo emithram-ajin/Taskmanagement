@@ -1,5 +1,5 @@
 import express from "express";
-import { register, login, deleteUser } from "../controllers/authController.js";
+import { register, login, deleteUser, getDepartments } from "../controllers/authController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { authorizeRoles } from "../middleware/rbacMiddleware.js";
 
@@ -25,5 +25,9 @@ router.get("/member", protect, authorizeRoles("superadmin", "admin", "member"), 
 
 // Delete user (Superadmin and Admin only)
 router.delete("/:userId", protect, authorizeRoles("superadmin", "admin"), deleteUser);
+
+// Get all departments (any authenticated user)
+router.get("/departments", protect, getDepartments);
+
 
 export default router;

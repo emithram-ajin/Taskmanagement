@@ -8,16 +8,35 @@ export const getMyTasks = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const { status, priority, page, limit } = req.query;
+    const { status, priority, deadlineFrom, deadlineTo, sortBy, page, limit } = req.query;
+
     const query = { assignee: userId };
 
+    // Status filter
     if (status) query.status = status;
+
+    // Priority filter
     if (priority) query.priority = priority;
 
+    // Deadline date-range filter
+    if (deadlineFrom || deadlineTo) {
+      query.deadline = {};
+      if (deadlineFrom) query.deadline.$gte = new Date(deadlineFrom);
+      if (deadlineTo)   query.deadline.$lte = new Date(deadlineTo);
+    }
+
     // Pagination
-    const pageNum = parseInt(page) || 1;
+    const pageNum  = parseInt(page)  || 1;
     const limitNum = parseInt(limit) || 10;
-    const skipNum = (pageNum - 1) * limitNum;
+    const skipNum  = (pageNum - 1) * limitNum;
+
+    // Sort options: deadline (default) | createdAt | priority
+    const sortOptions = {
+      deadline:  { deadline: 1 },
+      createdAt: { createdAt: -1 },
+      priority:  { priority: 1 },
+    };
+    const sort = sortOptions[sortBy] || { deadline: 1 };
 
     const totalTasks = await Task.countDocuments(query);
 
@@ -25,7 +44,7 @@ export const getMyTasks = async (req, res) => {
       .populate("project", "projectName status")
       .populate("assignee", "name email department")
       .populate("createdBy", "name email")
-      .sort({ deadline: 1 }) // earliest deadline first
+      .sort(sort)
       .skip(skipNum)
       .limit(limitNum);
 
@@ -40,6 +59,7 @@ export const getMyTasks = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 export const postDependency = async (req, res) => {
   try {

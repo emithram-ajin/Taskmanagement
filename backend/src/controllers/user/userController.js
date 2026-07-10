@@ -1,5 +1,8 @@
+import mongoose from "mongoose";
 import Task from "../../models/task.js";
 import ProjectDependency from "../../models/ProjectDependency.js";
+import Team from "../../models/Team.js";
+import Project from "../../models/Project.js";
 
 export const getMyTasks = async (req, res) => {
   try {
@@ -146,3 +149,13 @@ export const getDependencyById = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 };
+
+export const getUserProjects = async (req, res) => {
+  try {
+    const projects = await Project.find().select("_id projectName");
+    return res.status(200).json(projects);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+

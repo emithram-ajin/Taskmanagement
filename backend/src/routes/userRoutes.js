@@ -4,6 +4,7 @@ import {
   postDependency,
   getDependencies,
   getDependencyById,
+  getUserProjects,
 } from "../controllers/user/userController.js";
 import {
   createScrum,
@@ -15,6 +16,9 @@ import {
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// ── Project routes ─────────────────────────────────────────
+router.get("/projects", protect, getUserProjects);
 
 // ── Task routes ────────────────────────────────────────────
 router.get("/my-tasks", protect, getMyTasks);

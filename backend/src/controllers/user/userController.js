@@ -179,3 +179,36 @@ export const getUserProjects = async (req, res) => {
   }
 };
 
+// ── Update task status (drag-and-drop) ─────────────────────
+export const updateTaskStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const VALID_STATUSES = ["assigned", "blocker", "progress", "completed"];
+    if (!VALID_STATUSES.includes(status)) {
+      return res.status(400).json({
+        message: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`,
+      });
+    }
+
+    // Only allow the assignee of the task to update it
+    const task = await Task.findOne({ _id: id, assignee: req.user._id });
+    if (!task) {
+      return res.status(404).json({ message: "Task not found or not assigned to you." });
+    }
+
+    task.status = status;
+    await task.save();
+
+    const updated = await Task.findById(id)
+      .populate("project", "projectName status")
+      .populate("assignee", "name email department")
+      .populate("createdBy", "name email");
+
+    return res.status(200).json({ message: "Status updated successfully.", task: updated });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+

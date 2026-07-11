@@ -5,6 +5,7 @@ import {
   getDependencies,
   getDependencyById,
   getUserProjects,
+  updateTaskStatus,
 } from "../controllers/user/userController.js";
 import {
   createScrum,
@@ -22,6 +23,7 @@ router.get("/projects", protect, getUserProjects);
 
 // ── Task routes ────────────────────────────────────────────
 router.get("/my-tasks", protect, getMyTasks);
+router.patch("/my-tasks/status/:id", protect, updateTaskStatus);
 
 // ── Dependency routes ──────────────────────────────────────
 router.post("/dependency",     protect, postDependency);

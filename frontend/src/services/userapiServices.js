@@ -36,6 +36,45 @@ const userapiservicer = {
         const response = await axiosInstance.get('/projects');
         return response.data;
     },
+
+    // Scrum / Daily Standup API calls
+
+    createScrum: async (payload) => {
+        const response = await axiosInstance.post('/user/scrum', payload);
+        return response.data;
+    },
+
+    getMyScrums: async (params = {}) => {
+        const { page, limit } = params;
+        const response = await axiosInstance.get('/user/scrum', {
+            params: {
+                ...(page && { page }),
+                ...(limit && { limit }),
+            },
+        });
+        return response.data;
+    },
+
+    getScrumById: async (id) => {
+        const response = await axiosInstance.get(`/user/scrum/${id}`);
+        return response.data;
+    },
+
+    updateScrum: async (id, payload) => {
+        const response = await axiosInstance.put(`/user/scrum/${id}`, payload);
+        return response.data;
+    },
+
+    deleteScrum: async (id) => {
+        const response = await axiosInstance.delete(`/user/scrum/${id}`);
+        return response.data;
+    },
+
+    updateTaskStatus: async (id, status) => {
+        const response = await axiosInstance.patch(`/user/my-tasks/status/${id}`, { status });
+        return response.data;
+    },
+
 };
 
 export default userapiservicer;

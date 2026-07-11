@@ -1,10 +1,9 @@
-import React, { useState } from "react";
-import { Plus, AlertCircle, CheckCircle2, X, Check } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Plus, AlertCircle, CheckCircle2, X, Check, ChevronDown, ClipboardList } from "lucide-react";
 
 const CURRENT_USER = "Priya Patel";
 
 const TASK_OPTIONS = [
-
     "Push notification service",
     "Implement analytics charts",
     "API endpoint optimization",
@@ -27,6 +26,77 @@ function formatToday() {
         day: "numeric",
         year: "numeric",
     });
+}
+
+// Modern animated dropdown — replaces the plain native <select>. Opens with
+// a fade + scale + slight slide, chevron rotates, options highlight on
+// hover/selection.
+function ModernSelect({ value, options, onChange, placeholder = "Select...", icon: Icon }) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
+
+    useEffect(() => {
+        function handleClickOutside(e) {
+            if (ref.current && !ref.current.contains(e.target)) {
+                setOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    return (
+        <div ref={ref} className="relative">
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className={`w-full flex items-center justify-between gap-2 border rounded-lg px-3 py-2.5 text-[13px] text-left bg-white transition-all duration-150 ${
+                    open
+                        ? "border-rose-500 ring-2 ring-rose-500/30"
+                        : "border-slate-300 hover:border-rose-300"
+                }`}
+            >
+                <span className={`flex items-center gap-2 truncate ${value ? "text-slate-800" : "text-slate-400"}`}>
+                    {Icon && <Icon size={14} className="text-slate-400 shrink-0" />}
+                    <span className="truncate">{value || placeholder}</span>
+                </span>
+                <ChevronDown
+                    size={16}
+                    className={`text-slate-400 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                />
+            </button>
+
+            <div
+                className={`absolute z-20 mt-1.5 w-full bg-white border border-slate-200 rounded-lg shadow-lg py-1 origin-top transition-all duration-150 ${
+                    open
+                        ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                        : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
+                }`}
+            >
+                {options.map((option) => {
+                    const isSelected = option === value;
+                    return (
+                        <button
+                            key={option}
+                            type="button"
+                            onClick={() => {
+                                onChange(option);
+                                setOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2 text-[13px] text-left transition-colors duration-100 ${
+                                isSelected
+                                    ? "bg-rose-50 text-rose-700 font-medium"
+                                    : "text-slate-700 hover:bg-slate-50"
+                            }`}
+                        >
+                            {option}
+                            {isSelected && <Check size={14} className="text-rose-600" />}
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
 }
 
 export default function BlockerTracking() {
@@ -180,18 +250,13 @@ export default function BlockerTracking() {
                                 <label className="block text-sm font-semibold text-slate-800 mb-2">
                                     Related Task
                                 </label>
-                                <select
+                                <ModernSelect
                                     value={task}
-                                    onChange={(e) => setTask(e.target.value)}
-                                    className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-[13px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white"
-                                >
-                                    <option value="">Select a task</option>
-                                    {TASK_OPTIONS.map((t) => (
-                                        <option key={t} value={t}>
-                                            {t}
-                                        </option>
-                                    ))}
-                                </select>
+                                    options={TASK_OPTIONS}
+                                    onChange={setTask}
+                                    placeholder="Select a task"
+                                    icon={ClipboardList}
+                                />
                             </div>
 
                             <div>

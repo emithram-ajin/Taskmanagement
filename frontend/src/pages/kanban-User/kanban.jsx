@@ -1,16 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Flag, CalendarDays, User, ChevronDown, AlertTriangle } from "lucide-react";
-
-const initialTasks = [
-    { id: 1, title: "Database migration", description: "Migrate analytics data to new schema", date: "Apr 30", assignee: "James", project: "Dashboard Redesign", priority: "high", status: "todo", updatedAt: 0 },
-    { id: 2, title: "Push notification service", description: "Implement push notifications for iOS and Android", date: "May 1", assignee: "Priya", project: "Mobile App Launch", priority: "medium", status: "todo", updatedAt: 0 },
-    { id: 3, title: "Implement analytics charts", description: "Build interactive charts using Recharts library", date: "Apr 20", assignee: "Sarah", project: "Dashboard Redesign", priority: "high", status: "in-progress", updatedAt: 0 },
-    { id: 4, title: "API endpoint optimization", description: "Improve response times for dashboard APIs", date: "Apr 25", assignee: "Priya", project: "Dashboard Redesign", priority: "high", status: "in-progress", updatedAt: 0 },
-    { id: 5, title: "Mobile UI components", description: "Build reusable component library for mobile app", date: "Apr 15", assignee: "Marcus", project: "Mobile App Launch", priority: "high", status: "in-progress", updatedAt: 0 },
-    { id: 6, title: "Social media graphics", description: "Create graphics for LinkedIn, Twitter, Instagram", date: "Apr 20", assignee: "Emma", project: "Q2 Campaign", priority: "medium", status: "in-progress", updatedAt: 0 },
-    { id: 7, title: "Design new dashboard layout", description: "Create wireframes and mockups for the new dashboard", date: "Mar 15", assignee: "Sarah", project: "Dashboard Redesign", priority: "high", status: "completed", updatedAt: 0 },
-    { id: 8, title: "Content strategy document", description: "Define messaging and content calendar for Q2", date: "Apr 5", assignee: "Emma", project: "Q2 Campaign", priority: "medium", status: "completed", updatedAt: 0 },
-];
+import { Flag, CalendarDays, User, ChevronDown, AlertTriangle, Loader2 } from "lucide-react";
+import userapiservicer from "../../services/userapiServices";
 
 const COLUMNS = [
     {
@@ -57,8 +47,24 @@ const COLUMNS = [
 
 const ALL_PROJECTS = "All Projects";
 
-// One-time injected keyframes so we don't touch any existing design/colors,
-// just add motion on top of what's already there.
+// Maps the backend's task.status enum to the column keys this board uses.
+// (Board columns use "todo" / "in-progress"; the API uses "assigned" / "progress".)
+const STATUS_TO_COLUMN = {
+    assigned: "todo",
+    blocker: "blocker",
+    progress: "in-progress",
+    completed: "completed",
+};
+
+// Inverse map, in case you need to send a column key back to the API later
+// (e.g. when persisting a drag-and-drop status change).
+const COLUMN_TO_STATUS = {
+    todo: "assigned",
+    blocker: "blocker",
+    "in-progress": "progress",
+    completed: "completed",
+};
+
 const ANIMATION_STYLES = `
 @keyframes taskboard-fade-in {
     from { opacity: 0; transform: translateY(10px); }
@@ -106,8 +112,42 @@ const ANIMATION_STYLES = `
 }
 `;
 
+// Formats an ISO/date-ish value into the short "Apr 30" style the cards use.
+function formatShortDate(dateInput) {
+    if (!dateInput) return "—";
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+}
+
+// Converts a raw task from GET /user/my-tasks into the flat shape the board's
+// columns/cards expect (mirrors TaskDetails' normalizeTask, adapted for the
+// kanban view: status becomes a column key, priority is lowercased, and
+// dates are shortened for the card).
+// Normalizes a raw task from GET /user/my-tasks into the flat shape the
+// board's cards/columns expect. Keeps the raw deadline around too, in case
+// you need it for sorting/filtering later.
+// Normalizes a raw task from GET /user/my-tasks into the flat shape the
+// board's cards/columns expect.
+function normalizeTask(task) {
+    return {
+        id: task._id,
+        title: task.title,
+        description: task.description,
+        assignedDateRaw: task.createdAt || null,
+        assignedDate: formatShortDate(task.createdAt),
+        deadlineRaw: task.deadline || null,
+        deadline: formatShortDate(task.deadline),
+        assignee: task.assignee?.name || "Unassigned",
+        project: task.project?.projectName || "—",
+        priority: (task.priority || "").toLowerCase(),
+        status: STATUS_TO_COLUMN[task.status] || "todo",
+        updatedAt: task.updatedAt ? new Date(task.updatedAt).getTime() : 0,
+    };
+}
+
 // Modern custom dropdown — replaces the plain native <select>.
-function ModernSelect({ value, options, onChange }) {
+function ModernSelect({ value, options, onChange, loading }) {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
 
@@ -126,19 +166,20 @@ function ModernSelect({ value, options, onChange }) {
             <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
-                className={`w-full flex items-center justify-between gap-3 border rounded-lg px-4 py-2 text-sm text-slate-700 bg-white shadow-sm transition-all duration-150 cursor-pointer ${open
-                        ? "border-indigo-500 ring-2 ring-indigo-500/40"
-                        : "border-slate-300 hover:shadow-md hover:border-indigo-300"
+                disabled={loading}
+                className={`w-full flex items-center justify-between gap-3 border rounded-lg px-4 py-2 text-sm text-slate-700 bg-white shadow-sm transition-all duration-150 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${open
+                    ? "border-indigo-500 ring-2 ring-indigo-500/40"
+                    : "border-slate-300 hover:shadow-md hover:border-indigo-300"
                     }`}
             >
-                <span className="truncate">{value}</span>
+                <span className="truncate">{loading ? "Loading projects..." : value}</span>
                 <ChevronDown
                     size={16}
                     className={`text-slate-400 shrink-0 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
                 />
             </button>
 
-            {open && (
+            {open && !loading && (
                 <div className="absolute right-0 z-40 mt-1.5 w-full min-w-[200px] bg-white border border-slate-200 rounded-xl shadow-xl p-1.5">
                     {options.map((option) => {
                         const isSelected = option === value;
@@ -151,8 +192,8 @@ function ModernSelect({ value, options, onChange }) {
                                     setOpen(false);
                                 }}
                                 className={`w-full text-left px-4 py-2.5 text-sm rounded-lg transition-colors duration-100 ${isSelected
-                                        ? "bg-indigo-50 text-indigo-700 font-medium"
-                                        : "text-slate-700 hover:text-indigo-600"
+                                    ? "bg-indigo-50 text-indigo-700 font-medium"
+                                    : "text-slate-700 hover:text-indigo-600"
                                     }`}
                             >
                                 {option}
@@ -198,16 +239,24 @@ function TaskCard({ task, onDragStart, style }) {
                 </div>
             )}
 
-            {/* Date + Assignee */}
-            <div className="flex items-center justify-between text-[12px] text-slate-500 mb-3">
+            {/* Assigned date + Deadline */}
+            <div className="flex items-center justify-between text-[12px] mb-3">
+                <span className="flex items-center gap-1.5 text-slate-500">
+                    <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="text-slate-400">Assigned</span>
+                    <span className="text-slate-600 font-medium">{task.assignedDate}</span>
+                </span>
                 <span className="flex items-center gap-1.5">
                     <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
-                    {task.date}
+                    <span className="text-slate-400">Due</span>
+                    <span className="text-red-500 font-medium">{task.deadline}</span>
                 </span>
-                <span className="flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="text-slate-600 font-medium">{task.assignee}</span>
-                </span>
+            </div>
+
+            {/* Assignee */}
+            <div className="flex items-center gap-1.5 text-[12px] text-slate-500 mb-3">
+                <User className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-slate-600 font-medium">{task.assignee}</span>
             </div>
 
             {/* Project tag */}
@@ -221,17 +270,78 @@ function TaskCard({ task, onDragStart, style }) {
 }
 
 export default function TaskBoard() {
-    const [tasks, setTasks] = useState(initialTasks);
+    const [tasks, setTasks] = useState([]);
+    const [tasksLoading, setTasksLoading] = useState(true);
+    const [tasksError, setTasksError] = useState(null);
+
     const [dragTaskId, setDragTaskId] = useState(null);
     const [dragOverCol, setDragOverCol] = useState(null);
     const [poppedCol, setPoppedCol] = useState(null);
     const [selectedProject, setSelectedProject] = useState(ALL_PROJECTS);
+    const [projects, setProjects] = useState([ALL_PROJECTS]);
+    const [projectsLoading, setProjectsLoading] = useState(true);
     const popTimeout = useRef(null);
 
-    const projects = useMemo(
-        () => [ALL_PROJECTS, ...Array.from(new Set(tasks.map((t) => t.project)))],
-        [tasks]
-    );
+    // Fetch the logged-in user's tasks for the board, same endpoint TaskDetails uses.
+    useEffect(() => {
+        let isMounted = true;
+
+        async function loadTasks() {
+            setTasksLoading(true);
+            setTasksError(null);
+            try {
+                const data = await userapiservicer.getMyTasks();
+                const normalized = (data.tasks || []).map(normalizeTask);
+                if (isMounted) setTasks(normalized);
+            } catch (err) {
+                console.error("Failed to fetch tasks:", err);
+                if (isMounted) {
+                    setTasksError(err?.response?.data?.message || "Failed to load tasks");
+                }
+            } finally {
+                if (isMounted) setTasksLoading(false);
+            }
+        }
+
+        loadTasks();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    // Fetch the project list from the API for the dropdown.
+    useEffect(() => {
+        let isMounted = true;
+
+        async function loadProjects() {
+            setProjectsLoading(true);
+            try {
+                const res = await userapiservicer.getProjects();
+                const list = Array.isArray(res) ? res : res?.projects || [];
+                const names = list.map((p) => p.projectName).filter(Boolean);
+
+                if (isMounted) {
+                    setProjects([ALL_PROJECTS, ...names]);
+                }
+            } catch (err) {
+                console.error("Failed to fetch projects:", err);
+                // Fallback: derive project list from whatever tasks are currently loaded,
+                // so the dropdown still works even if the endpoint is down.
+                if (isMounted) {
+                    const fallback = Array.from(new Set(tasks.map((t) => t.project)));
+                    setProjects([ALL_PROJECTS, ...fallback]);
+                }
+            } finally {
+                if (isMounted) setProjectsLoading(false);
+            }
+        }
+
+        loadProjects();
+        return () => {
+            isMounted = false;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // fetch once on mount
 
     const visibleTasks =
         selectedProject === ALL_PROJECTS
@@ -259,19 +369,46 @@ export default function TaskBoard() {
         );
     };
 
-    const handleDrop = (status) => {
+    const handleDrop = async (columnKey) => {
         if (dragTaskId == null) return;
+
+        const taskId = dragTaskId;
+        const apiStatus = COLUMN_TO_STATUS[columnKey];
+
+        // Keep the previous state around so we can roll back if the API call fails.
+        const prevTasks = tasks;
+        const prevTask = tasks.find((t) => t.id === taskId);
+
+        // Nothing to do if it was dropped back into the same column.
+        if (!prevTask || prevTask.status === columnKey) {
+            setDragTaskId(null);
+            setDragOverCol(null);
+            return;
+        }
+
+        // Optimistic update — move the card immediately, don't wait on the network.
         setTasks((prev) =>
-            prev.map((t) => (t.id === dragTaskId ? { ...t, status, updatedAt: Date.now() } : t))
+            prev.map((t) =>
+                t.id === taskId ? { ...t, status: columnKey, updatedAt: Date.now() } : t
+            )
         );
         setDragTaskId(null);
         setDragOverCol(null);
 
-        // Briefly pop the destination column's count badge to
-        // acknowledge the drop, then clear it back to normal.
-        setPoppedCol(status);
+        setPoppedCol(columnKey);
         clearTimeout(popTimeout.current);
         popTimeout.current = setTimeout(() => setPoppedCol(null), 350);
+
+        try {
+            await userapiservicer.updateTaskStatus(taskId, apiStatus);
+        } catch (err) {
+            console.error("Failed to update task status:", err);
+            // Roll back to the pre-drop state and let the user know.
+            setTasks(prevTasks);
+            setTasksError(
+                err?.response?.data?.message || "Failed to update task status. Please try again."
+            );
+        }
     };
 
     return (
@@ -288,73 +425,87 @@ export default function TaskBoard() {
                     value={selectedProject}
                     options={projects}
                     onChange={setSelectedProject}
+                    loading={projectsLoading}
                 />
             </div>
 
-            {/* Kanban Columns */}
-            <div className="tb-scroll-row flex gap-5 pb-6 items-stretch overflow-x-auto">
-                {COLUMNS.map((col, colIndex) => {
-                    const colTasks = visibleTasks
-                        .filter((t) => t.status === col.key)
-                        .slice()
-                        .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-                    const isOver = dragOverCol === col.key;
+            {tasksError && (
+                <div className="mb-4 text-sm text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-4 py-2.5">
+                    {tasksError}
+                </div>
+            )}
 
-                    return (
-                        <div
-                            key={col.key}
-                            onDragOver={(e) => { e.preventDefault(); setDragOverCol(col.key); }}
-                            onDragLeave={() => setDragOverCol(null)}
-                            onDrop={() => handleDrop(col.key)}
-                            style={{ animationDelay: `${colIndex * 80}ms` }}
-                            className={`tb-column-in flex flex-col rounded-xl w-[480px] shrink-0 ${col.colBorder} ${isOver ? col.dropHighlight : col.bgColor} transition-colors duration-200`}
-                        >
-                            {/* Column Header */}
-                            <div className="px-5 pt-5 pb-4 flex items-center justify-between shrink-0">
-                                <span className={`flex items-center gap-1.5 text-[15px] font-bold tracking-widest uppercase ${col.headerColor}`}>
-                                    {col.key === "blocker" && <AlertTriangle className="w-4 h-4" />}
-                                    {col.label}
-                                </span>
-                                <span
-                                    key={colTasks.length}
-                                    className={`min-w-[22px] h-[22px] px-1.5 flex items-center justify-center rounded-full text-[11px] font-bold ${col.badgeBg} ${col.badgeText} ${poppedCol === col.key ? "tb-badge-pop" : ""}`}
-                                >
-                                    {colTasks.length}
-                                </span>
-                            </div>
+            {tasksLoading ? (
+                <div className="flex items-center justify-center gap-2 text-slate-400 text-sm py-16">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading tasks...
+                </div>
+            ) : (
+                /* Kanban Columns */
+                <div className="tb-scroll-row flex gap-5 pb-6 items-stretch overflow-x-auto">
+                    {COLUMNS.map((col, colIndex) => {
+                        const colTasks = visibleTasks
+                            .filter((t) => t.status === col.key)
+                            .slice()
+                            .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+                        const isOver = dragOverCol === col.key;
 
-                            {/* Cards */}
-                            <div className="px-4 pb-5 flex flex-col gap-3 flex-1">
-                                {colTasks.map((task, i) => (
-                                    <div key={task.id} data-task-id={task.id}>
-                                        <TaskCard
-                                            task={task}
-                                            onDragStart={handleDragStart}
-                                            style={{ animationDelay: `${i * 60}ms` }}
-                                        />
-                                    </div>
-                                ))}
+                        return (
+                            <div
+                                key={col.key}
+                                onDragOver={(e) => { e.preventDefault(); setDragOverCol(col.key); }}
+                                onDragLeave={() => setDragOverCol(null)}
+                                onDrop={() => handleDrop(col.key)}
+                                style={{ animationDelay: `${colIndex * 80}ms` }}
+                                className={`tb-column-in flex flex-col rounded-xl w-[480px] shrink-0 ${col.colBorder} ${isOver ? col.dropHighlight : col.bgColor} transition-colors duration-200`}
+                            >
+                                {/* Column Header */}
+                                <div className="px-5 pt-5 pb-4 flex items-center justify-between shrink-0">
+                                    <span className={`flex items-center gap-1.5 text-[15px] font-bold tracking-widest uppercase ${col.headerColor}`}>
+                                        {col.key === "blocker" && <AlertTriangle className="w-4 h-4" />}
+                                        {col.label}
+                                    </span>
+                                    <span
+                                        key={colTasks.length}
+                                        className={`min-w-[22px] h-[22px] px-1.5 flex items-center justify-center rounded-full text-[11px] font-bold ${col.badgeBg} ${col.badgeText} ${poppedCol === col.key ? "tb-badge-pop" : ""}`}
+                                    >
+                                        {colTasks.length}
+                                    </span>
+                                </div>
 
-                                {colTasks.length === 0 && col.key === "blocker" && (
-                                   <div className="tb-empty-in bg-white rounded-xl border border-dashed border-rose-200 p-4 w-full h-38 flex flex-col items-center justify-center text-center gap-1.5">
-                                        <div className="w-9 h-9 rounded-full bg-rose-50 flex items-center justify-center">
-                                            <AlertTriangle className="w-4 h-4 text-rose-300" />
+                                {/* Cards */}
+                                <div className="px-4 pb-5 flex flex-col gap-3 flex-1">
+                                    {colTasks.map((task, i) => (
+                                        <div key={task.id} data-task-id={task.id}>
+                                            <TaskCard
+                                                task={task}
+                                                onDragStart={handleDragStart}
+                                                style={{ animationDelay: `${i * 60}ms` }}
+                                            />
                                         </div>
-                                        <p className="text-[13px] font-semibold text-slate-500">No reported blockers</p>
-                                        <p className="text-[12px] text-slate-400">Everything's running smoothly</p>
-                                    </div>
-                                )}
+                                    ))}
 
-                                {colTasks.length === 0 && col.key !== "blocker" && (
-                                    <div className="tb-empty-in flex-1 flex items-center justify-center text-slate-400 text-sm">
-                                        No tasks
-                                    </div>
-                                )}
+                                    {colTasks.length === 0 && col.key === "blocker" && (
+                                        <div className="tb-empty-in bg-white rounded-xl border border-dashed border-rose-200 p-4 w-full h-38 flex flex-col items-center justify-center text-center gap-1.5">
+                                            <div className="w-9 h-9 rounded-full bg-rose-50 flex items-center justify-center">
+                                                <AlertTriangle className="w-4 h-4 text-rose-300" />
+                                            </div>
+                                            <p className="text-[13px] font-semibold text-slate-500">No reported blockers</p>
+                                            <p className="text-[12px] text-slate-400">Everything's running smoothly</p>
+                                        </div>
+                                    )}
+
+                                    {colTasks.length === 0 && col.key !== "blocker" && (
+                                        <div className="tb-empty-in flex-1 flex items-center justify-center text-slate-400 text-sm">
+                                            No tasks
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 }

@@ -15,6 +15,7 @@ const TopBar = () => {
       case '/kanban': return 'Kanban Board';
       case '/scrum': return 'Scrum Updates';
       case '/blockers': return 'Blockers';
+      case '/dependencies': return 'Dependencies';
       default: return 'Overview';
     }
   };

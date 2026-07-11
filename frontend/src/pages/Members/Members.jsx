@@ -3,6 +3,7 @@ import { Users, Pencil, Trash2, Mail, UserPlus, Shield } from "lucide-react";
 import Modal from "../../components/Modal/Modal";
 import Loader from "../../components/Loader/Loader";
 import apiServices from "../../services/apiServices";
+import CustomDropdown from "../../components/Dropdown/CustomDropdown";
 
 const CreateMemberModal = ({
   isOpen,
@@ -126,18 +127,19 @@ const CreateMemberModal = ({
 const Members = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [departments] = useState(["HR", "IT", "Sales", "Marketing"]);
+  const [filterDepartment, setFilterDepartment] = useState("");
 
   const [members, setMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchMembers();
-  }, []);
+  }, [filterDepartment]);
 
   const fetchMembers = async () => {
     try {
       setIsLoading(true);
-      const data = await apiServices.getAllMembers();
+      const data = await apiServices.getAllMembers(filterDepartment);
       setMembers(data.map(m => ({ ...m, id: m._id, status: 'Active' })));
     } catch (error) {
       console.error("Failed to fetch members:", error);
@@ -197,6 +199,19 @@ const Members = () => {
           <UserPlus className="w-4 h-4 mr-2" />
           Add Member
         </button>
+      </div>
+
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex items-center">
+        <CustomDropdown 
+          value={filterDepartment} 
+          onChange={e => setFilterDepartment(e.target.value)} 
+          placeholder="All Departments"
+          className="min-w-[160px] max-w-[200px]"
+          options={[
+            { value: '', label: 'All Departments' },
+            ...departments.map(d => ({ value: d, label: d }))
+          ]}
+        />
       </div>
 
       {isLoading ? (

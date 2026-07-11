@@ -4,4 +4,12 @@
   body {
     @apply antialiased text-gray-800 bg-gray-50;
   }
+  button, 
+  [role="button"],
+  a {
+    @apply cursor-pointer;
+  }
+  button:disabled {
+    @apply cursor-not-allowed;
+  }
 }

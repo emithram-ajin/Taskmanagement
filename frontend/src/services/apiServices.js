@@ -32,9 +32,10 @@ const apiServices = {
     const response = await axiosInstance.post('/auth/register', userData);
     return response.data;
   },
-
-  getAllMembers: async () => {
-    const response = await axiosInstance.get('/admin/members');
+  
+  getAllMembers: async (department = "") => {
+    const url = department ? `/admin/members?department=${department}` : '/admin/members';
+    const response = await axiosInstance.get(url);
     return response.data;
   },
 
@@ -43,13 +44,26 @@ const apiServices = {
     return response.data;
   },
 
+  getAdminDependencies: async (params = {}) => {
+    const response = await axiosInstance.get('/admin/dependencies', { params });
+    return response.data;
+  },
 
+  getAdminScrums: async () => {
+    const response = await axiosInstance.get('/admin/scrums?limit=1000');
+    return response.data.scrums || response.data;
+  },
 
   // -------------------------
   // PROJECTS
   // -------------------------
   getProjects: async () => {
     const response = await axiosInstance.get('/projects');
+    return response.data;
+  },
+
+  getProjectProgress: async (projectId) => {
+    const response = await axiosInstance.get(`/projects/progress/${projectId}`);
     return response.data;
   },
 
@@ -71,9 +85,9 @@ const apiServices = {
   // -------------------------
   // TASKS
   // -------------------------
-  getTasks: async () => {
-    const response = await axiosInstance.get('/tasks');
-    return response.data.tasks || response.data;
+  getTasks: async (params = {}) => {
+    const response = await axiosInstance.get('/tasks', { params });
+    return response.data;
   },
 
   createTask: async (taskData) => {

@@ -18,13 +18,13 @@ const KanbanBoard = () => {
     try {
       setIsLoading(true);
       const [tasksData, projectsData] = await Promise.all([
-        apiServices.getTasks(),
+        apiServices.getTasks({ limit: 1000 }),
         apiServices.getProjects()
       ]);
-      setTasks(tasksData);
+      setTasks(tasksData.tasks || tasksData);
       setProjects(projectsData);
     } catch (error) {
-      console.error("Failed to fetch data:", error);
+      console.error("Failed to fetch Kanban data:", error);
     } finally {
       setIsLoading(false);
     }

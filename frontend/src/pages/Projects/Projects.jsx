@@ -23,8 +23,25 @@ const Projects = () => {
         apiServices.getProjects(),
         apiServices.getTeams()
       ]);
+      
       setProjects(projectsData);
       setAllTeams(teamsData);
+
+      // Asynchronously fetch progress for each project
+      projectsData.forEach(async (project) => {
+        try {
+          const stats = await apiServices.getProjectProgress(project._id);
+          if (stats && stats.progress !== undefined) {
+            setProjects((prevProjects) => 
+              prevProjects.map((p) => 
+                p._id === project._id ? { ...p, progress: stats.progress } : p
+              )
+            );
+          }
+        } catch (err) {
+          console.error(`Failed to fetch progress for ${project._id}`, err);
+        }
+      });
     } catch (error) {
       console.error("Failed to fetch projects data:", error);
     } finally {

@@ -9,7 +9,8 @@ import {
   KanbanSquare, 
   MessageSquare, 
   AlertCircle,
-  LogOut
+  LogOut,
+  FolderGit2
 } from 'lucide-react';
 
 const Sidebar = ({ onLogout }) => {
@@ -23,6 +24,7 @@ const Sidebar = ({ onLogout }) => {
     { icon: User, label: 'Members', path: '/members' },
     { icon: FolderKanban, label: 'Projects', path: '/projects' },
     { icon: CheckSquare, label: 'Tasks', path: '/tasks' },
+    { icon: FolderGit2, label: 'Dependencies', path: '/dependencies' },
     { icon: KanbanSquare, label: 'Kanban Board', path: '/kanban' },
     { icon: MessageSquare, label: 'Scrum Updates', path: '/scrum' },
     { icon: AlertCircle, label: 'Blockers', path: '/blockers' },

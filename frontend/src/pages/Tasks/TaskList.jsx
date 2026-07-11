@@ -4,6 +4,7 @@ import CreateTaskModal from '../../components/Modal/CreateTaskModal';
 import apiServices from '../../services/apiServices';
 import Loader from '../../components/Loader/Loader';
 import CustomDropdown from '../../components/Dropdown/CustomDropdown';
+import Pagination from '../../components/Pagination/Pagination';
 
 const TaskList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -14,24 +15,42 @@ const TaskList = () => {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const [tasks, setTasks] = useState([]);
   const [allProjects, setAllProjects] = useState([]);
   const [allMembers, setAllMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterProject, filterAssignee, filterStatus, filterPriority]);
+
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentPage, filterProject, filterAssignee, filterStatus, filterPriority]);
 
   const fetchData = async () => {
     try {
       setIsLoading(true);
+      const params = {
+        page: currentPage,
+        limit: 10,
+      };
+      if (filterProject) params.project = filterProject;
+      if (filterAssignee) params.assignee = filterAssignee;
+      if (filterStatus) params.status = filterStatus;
+      if (filterPriority) params.priority = filterPriority;
+
       const [tasksData, projectsData, membersData] = await Promise.all([
-        apiServices.getTasks(),
+        apiServices.getTasks(params),
         apiServices.getProjects(),
         apiServices.getAllMembers()
       ]);
-      setTasks(tasksData);
+      setTasks(tasksData.tasks || []);
+      setTotalPages(tasksData.totalPages || 1);
       setAllProjects(projectsData);
       setAllMembers(membersData);
     } catch (error) {
@@ -87,13 +106,7 @@ const TaskList = () => {
     }
   };
 
-  const filteredTasks = tasks.filter(task => {
-    if (filterProject && (task.project?._id !== filterProject && task.project !== filterProject)) return false;
-    if (filterAssignee && (task.assignee?._id !== filterAssignee && task.assignee !== filterAssignee)) return false;
-    if (filterStatus && task.status?.toLowerCase() !== filterStatus.toLowerCase()) return false;
-    if (filterPriority && task.priority?.toLowerCase() !== filterPriority.toLowerCase()) return false;
-    return true;
-  });
+
 
   return (
     <div className="p-8 w-full h-full overflow-y-auto animate-in fade-in duration-300">
@@ -182,14 +195,14 @@ const TaskList = () => {
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden min-w-full">
             <table className="min-w-full divide-y divide-slate-200">
               <tbody className="bg-white divide-y divide-slate-100">
-            {filteredTasks.length === 0 ? (
+            {tasks.length === 0 ? (
               <tr>
                 <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
                   No tasks found matching your filters.
                 </td>
               </tr>
             ) : (
-            filteredTasks.map((task) => (
+            tasks.map((task) => (
               <tr key={task._id} className="group hover:bg-slate-50 transition-colors cursor-pointer">
                 <td className="px-6 py-4 flex items-center gap-6">
                   <div className="flex-1 min-w-[200px] max-w-[300px]">
@@ -250,6 +263,11 @@ const TaskList = () => {
           </tbody>
         </table>
       </div>
+      <Pagination 
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
       </div>
       )}
 

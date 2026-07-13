@@ -70,11 +70,21 @@ const userapiservicer = {
         return response.data;
     },
 
-    updateTaskStatus: async (id, status) => {
+    getProjects: async () => {
+        const response = await axiosInstance.get('/user/projects');
+        return response.data;
+    },
+
+      updateTaskStatus: async (id, status) => {
         const response = await axiosInstance.patch(`/user/my-tasks/status/${id}`, { status });
         return response.data;
     },
 
+
+    getMyScrums: async (params = {}) => {
+        const response = await axiosInstance.get('/user/scrum', { params });
+        return response.data;
+    },
 };
 
 export default userapiservicer;

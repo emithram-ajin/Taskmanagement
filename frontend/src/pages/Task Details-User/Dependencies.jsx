@@ -764,7 +764,7 @@ export default function Dependencies() {
                                     </button>
                                     <button
                                         onClick={confirmRemove}
-                                        className="px-5 py-2.5 rounded-xl text-md font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-colors cursor-pointer"
+                                        className="px-5 py-2.5 rounded-xl text-md font-semibold text-white bg-blue-600 hover:bg-rose-700 transition-colors cursor-pointer"
                                     >
                                         Yes, delete
                                     </button>

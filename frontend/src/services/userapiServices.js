@@ -32,6 +32,16 @@ const userapiservicer = {
         return response.data;
     },
 
+    deleteDependency: async (id) => {
+        const response = await axiosInstance.delete(`/user/dependency/${id}`);
+        return response.data;
+    },
+
+    updateDependency: async (id, payload) => {
+        const response = await axiosInstance.put(`/user/dependency/${id}`, payload);
+        return response.data;
+    },
+
     getProjects: async () => {
         const response = await axiosInstance.get('/projects');
         return response.data;
@@ -75,7 +85,7 @@ const userapiservicer = {
         return response.data;
     },
 
-      updateTaskStatus: async (id, status) => {
+    updateTaskStatus: async (id, status) => {
         const response = await axiosInstance.patch(`/user/my-tasks/status/${id}`, { status });
         return response.data;
     },

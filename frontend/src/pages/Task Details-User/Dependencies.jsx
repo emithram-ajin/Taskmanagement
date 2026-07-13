@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { FolderGit2, Plus, X, ChevronDown, Trash2, Pencil, Loader2 } from 'lucide-react';
+import { FolderGit2, Plus, X, ChevronDown, Trash2, Pencil, Loader2, Check, AlertCircle } from 'lucide-react';
 import userapiservicer from '../../services/userapiServices';
 
 
@@ -21,6 +21,52 @@ function normalizeDependency(dep) {
             value: a.value,
         })),
     };
+}
+
+// Small toast notification — same visual language (icon, rounded card,
+// spring-in animation) as the sidebar's logout confirmation.
+function Toast({ toast, onClose }) {
+    useEffect(() => {
+        if (!toast) return;
+        const timer = setTimeout(onClose, 3000);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [toast]);
+
+    if (!toast) return null;
+
+    const isSuccess = toast.type === 'success';
+
+    return (
+        <div className="fixed top-6 right-6 z-[70] pointer-events-none">
+            <div className="pointer-events-auto animate-[toast-in_0.35s_cubic-bezier(0.34,1.56,0.64,1)]">
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl px-5 py-4 flex items-center gap-3.5 min-w-[300px] max-w-sm">
+                    <div
+                        className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${
+                            isSuccess ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                        }`}
+                    >
+                        {isSuccess ? <Check size={20} /> : <AlertCircle size={20} />}
+                    </div>
+                    <p className="text-sm font-semibold text-slate-800 flex-1">{toast.message}</p>
+                    <button
+                        onClick={onClose}
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer shrink-0"
+                    >
+                        <X size={14} />
+                    </button>
+                </div>
+            </div>
+
+            <style>{`
+                @keyframes toast-in {
+                    0% { opacity: 0; transform: translateY(-12px) scale(0.95); }
+                    60% { opacity: 1; transform: translateY(2px) scale(1.02); }
+                    100% { opacity: 1; transform: translateY(0) scale(1); }
+                }
+            `}</style>
+        </div>
+    );
 }
 
 // ModernSelect component unchanged — keep exactly as you have it
@@ -95,6 +141,7 @@ export default function Dependencies() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const [deletingId, setDeletingId] = useState(null);
 
     const [projectNames, setProjectNames] = useState([]);
     const [projectsLoading, setProjectsLoading] = useState(true);
@@ -109,6 +156,14 @@ export default function Dependencies() {
 
     const [viewingDep, setViewingDep] = useState(null);
     const [expandedTags, setExpandedTags] = useState({});
+
+    // Toast + delete-confirmation state
+    const [toast, setToast] = useState(null); // { type: 'success' | 'error', message, key }
+    const [deleteTarget, setDeleteTarget] = useState(null); // dependency pending delete confirmation
+
+    const showToast = (type, message) => {
+        setToast({ type, message, key: Date.now() });
+    };
 
     // --- Fetch dependencies from API ---
     const fetchDependencies = async () => {
@@ -203,7 +258,7 @@ export default function Dependencies() {
         setRows((prev) => prev.filter((row) => row.id !== id));
     };
 
-    // --- Submit to API (create only — no update endpoint given yet) ---
+    // --- Submit to API (create or update) ---
     const handleSubmit = async () => {
         if (!project || !dependencyName) return;
 
@@ -215,15 +270,13 @@ export default function Dependencies() {
         setError(null);
         try {
             if (editingId) {
-                // No PUT/update endpoint provided yet — for now just update locally.
-                // Replace with a real API call once an update endpoint exists.
-                setDependencies((prev) =>
-                    prev.map((dep) =>
-                        dep.id === editingId
-                            ? { ...dep, project, dependencyName, description: attributes }
-                            : dep
-                    )
-                );
+                await userapiservicer.updateDependency(editingId, {
+                    projectName: project,
+                    dependencyName,
+                    attributes,
+                });
+                await fetchDependencies(); // refresh list from server
+                showToast('success', 'Dependency updated successfully');
             } else {
                 await userapiservicer.postDependency({
                     projectName: project,
@@ -231,19 +284,49 @@ export default function Dependencies() {
                     attributes,
                 });
                 await fetchDependencies(); // refresh list from server
+                showToast('success', 'Dependency added successfully');
             }
             handleClose();
         } catch (err) {
             console.error('Failed to save dependency:', err);
-            setError(err?.response?.data?.message || 'Failed to save dependency');
+            const message = err?.response?.data?.message || 'Failed to save dependency';
+            setError(message);
+            showToast('error', message);
         } finally {
             setSubmitting(false);
         }
     };
 
-    const handleRemove = (id) => {
-        // No delete endpoint provided yet — remove locally only.
-        setDependencies((prev) => prev.filter((dep) => dep.id !== id));
+    // --- Delete flow: open confirm modal, then delete via API on confirm ---
+    const handleRequestRemove = (dep) => {
+        setDeleteTarget(dep);
+    };
+
+    const confirmRemove = async () => {
+        const dep = deleteTarget;
+        if (!dep) return;
+        setDeleteTarget(null);
+
+        const prevDependencies = dependencies;
+
+        // Optimistically remove it from the list right away.
+        setDependencies((prev) => prev.filter((d) => d.id !== dep.id));
+        setDeletingId(dep.id);
+        setError(null);
+
+        try {
+            await userapiservicer.deleteDependency(dep.id);
+            showToast('success', 'Dependency deleted successfully');
+        } catch (err) {
+            console.error('Failed to delete dependency:', err);
+            // Roll back — put it back in the list and surface the error.
+            setDependencies(prevDependencies);
+            const message = err?.response?.data?.message || 'Failed to delete dependency';
+            setError(message);
+            showToast('error', message);
+        } finally {
+            setDeletingId(null);
+        }
     };
 
     return (
@@ -270,15 +353,17 @@ export default function Dependencies() {
                     />
                 </div>
 
+                {error && (
+                    <div className="mb-4 text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-4 py-2.5">
+                        {error}
+                    </div>
+                )}
+
                 <div className="bg-white rounded-2xl border border-slate-200 p-6 min-h-[460px] flex flex-col shadow-sm">
                 {loading ? (
                     <div className="flex-1 flex items-center justify-center gap-2 text-slate-400 text-sm">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         Loading dependencies...
-                    </div>
-                ) : error ? (
-                    <div className="flex-1 flex items-center justify-center text-rose-500 text-sm">
-                        {error}
                     </div>
                 ) : filteredDependencies.length === 0 ? (
                     /* Empty state */
@@ -346,10 +431,12 @@ export default function Dependencies() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {filteredDependencies.map((dep) => (
+                                    {filteredDependencies.map((dep) => {
+                                        const isDeleting = deletingId === dep.id;
+                                        return (
                                         <tr
                                             key={dep.id}
-                                            className="group hover:bg-indigo-50/30 transition-colors duration-150"
+                                            className={`group hover:bg-indigo-50/30 transition-colors duration-150 ${isDeleting ? 'opacity-50' : ''}`}
                                         >
                                             <td className="px-4 py-3.5 align-top">
                                                 <button
@@ -397,22 +484,29 @@ export default function Dependencies() {
                                                 <div className="flex items-center justify-end gap-1.5">
                                                     <button
                                                         onClick={() => handleOpenEdit(dep)}
-                                                        className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-slate-400 hover:bg-indigo-50 hover:text-indigo-500 transition-colors cursor-pointer"
+                                                        disabled={isDeleting}
+                                                        className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-slate-400 hover:bg-indigo-50 hover:text-indigo-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                                         title="Edit"
                                                     >
                                                         <Pencil size={15} />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleRemove(dep.id)}
-                                                        className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer"
+                                                        onClick={() => handleRequestRemove(dep)}
+                                                        disabled={isDeleting}
+                                                        className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                                         title="Delete"
                                                     >
-                                                        <Trash2 size={15} />
+                                                        {isDeleting ? (
+                                                            <Loader2 size={15} className="animate-spin" />
+                                                        ) : (
+                                                            <Trash2 size={15} />
+                                                        )}
                                                     </button>
                                                 </div>
                                             </td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -637,6 +731,64 @@ export default function Dependencies() {
                     </div>
                 </div>
             )}
+
+            {/* Delete confirmation modal — same style as sidebar logout confirm */}
+            {deleteTarget && (
+                <>
+                    <div
+                        onClick={() => setDeleteTarget(null)}
+                        className="fixed inset-0 bg-slate-900/40 z-[59] animate-[del-backdrop-in_0.25s_ease-out]"
+                    />
+
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 pointer-events-none">
+                        <div className="w-[480px] max-w-[92vw] pointer-events-auto animate-[del-toast-in_0.35s_cubic-bezier(0.34,1.56,0.64,1)]">
+                            <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl px-8 py-8 flex flex-col gap-6">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-14 h-14 shrink-0 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
+                                        <Trash2 size={24} />
+                                    </div>
+                                    <div>
+                                        <p className="text-xl font-bold text-slate-900">Delete dependency?</p>
+                                        <p className="text-lg text-slate-500 mt-1.5 leading-relaxed">
+                                            "{deleteTarget.dependencyName}" will be permanently removed from{' '}
+                                            {deleteTarget.project}.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex justify-end gap-3">
+                                    <button
+                                        onClick={() => setDeleteTarget(null)}
+                                        className="px-5 py-2.5 rounded-xl text-md font-semibold text-slate-600 border border-slate-300 hover:bg-slate-50 transition-colors cursor-pointer"
+                                    >
+                                        No
+                                    </button>
+                                    <button
+                                        onClick={confirmRemove}
+                                        className="px-5 py-2.5 rounded-xl text-md font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-colors cursor-pointer"
+                                    >
+                                        Yes, delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <style>{`
+                        @keyframes del-backdrop-in {
+                            from { opacity: 0; }
+                            to { opacity: 1; }
+                        }
+                        @keyframes del-toast-in {
+                            0% { opacity: 0; transform: scale(0.9); }
+                            60% { opacity: 1; transform: scale(1.03); }
+                            100% { opacity: 1; transform: scale(1); }
+                        }
+                    `}</style>
+                </>
+            )}
+
+            {/* Success / error toast */}
+            <Toast key={toast?.key} toast={toast} onClose={() => setToast(null)} />
         </div>
     );
 }

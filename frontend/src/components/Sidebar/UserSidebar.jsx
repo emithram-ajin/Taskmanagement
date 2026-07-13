@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutGrid, CheckSquare, KanbanSquare, MessageSquare, AlertCircle, LogOut, X, Menu, ChevronDown, GitBranch, AlertTriangle } from 'lucide-react';
+import { LayoutGrid, CheckSquare, KanbanSquare, MessageSquare, AlertCircle, LogOut, X, Menu, ChevronDown, GitBranch } from 'lucide-react';
 
 // isOpen and onToggle are controlled by the parent layout so the
 // content area can react when the sidebar opens or closes.
@@ -132,7 +132,7 @@ const UserSidebar = ({ isOpen, onToggle, onLogout }) => {
                 </button>
             )}
 
-            {/* Logout confirmation modal — centered on screen, large */}
+            {/* Logout confirmation modal — centered on screen, large, light theme */}
             {showLogoutConfirm && (
                 <>
                     {/* Soft backdrop dim, fades in behind the modal */}
@@ -143,14 +143,14 @@ const UserSidebar = ({ isOpen, onToggle, onLogout }) => {
 
                     <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 pointer-events-none">
                         <div className="w-[480px] max-w-[92vw] pointer-events-auto animate-[logout-toast-in_0.35s_cubic-bezier(0.34,1.56,0.64,1)]">
-                            <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl px-8 py-8 flex flex-col gap-6">
+                            <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl px-8 py-8 flex flex-col gap-6">
                                 <div className="flex items-start gap-4">
-                                    <div className="w-14 h-14 shrink-0 rounded-full bg-rose-500/15 text-rose-400 flex items-center justify-center">
-                                        <AlertTriangle size={28} />
+                                    <div className="w-14 h-14 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                        <LogOut size={26} />
                                     </div>
                                     <div>
-                                        <p className="text-xl font-bold text-white">Log out?</p>
-                                        <p className="text-lg text-slate-400 mt-1.5 leading-relaxed">
+                                        <p className="text-xl font-bold text-slate-900">Log out?</p>
+                                        <p className="text-lg text-slate-500 mt-1.5 leading-relaxed">
                                             You'll need to sign in again to continue using ProjectFlow.
                                         </p>
                                     </div>
@@ -158,13 +158,13 @@ const UserSidebar = ({ isOpen, onToggle, onLogout }) => {
                                 <div className="flex justify-end gap-3">
                                     <button
                                         onClick={() => setShowLogoutConfirm(false)}
-                                        className="px-5 py-2.5 rounded-xl text-md font-semibold text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer"
+                                        className="px-5 py-2.5 rounded-xl text-md font-semibold text-slate-600 border border-slate-300 hover:bg-slate-50 transition-colors cursor-pointer"
                                     >
                                         No
                                     </button>
                                     <button
                                         onClick={confirmLogout}
-                                        className="px-5 py-2.5 rounded-xl text-md font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-colors cursor-pointer"
+                                        className="px-5 py-2.5 rounded-xl text-md font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors cursor-pointer"
                                     >
                                         Yes, log out
                                     </button>

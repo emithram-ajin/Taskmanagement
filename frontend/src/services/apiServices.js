@@ -108,6 +108,21 @@ const apiServices = {
   updateTaskStatus: async (taskId, newStatus) => {
     const response = await axiosInstance.put(`/tasks/${taskId}`, { status: newStatus });
     return response.data;
+  },
+
+  getDashboardStats: async () => {
+    const response = await axiosInstance.get('/admin/dashboard-stats');
+    return response.data;
+  },
+
+  getDepartments: async () => {
+    const response = await axiosInstance.get('/auth/departments');
+    return response.data;
+  },
+
+  adminLoginAs: async (userId) => {
+    const response = await axiosInstance.post(`/admin/login-as/${userId}`);
+    return response.data;
   }
 };
 

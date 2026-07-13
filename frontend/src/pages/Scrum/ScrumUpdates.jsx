@@ -3,6 +3,7 @@ import { MessageSquare, CalendarDays, X } from 'lucide-react';
 import apiServices from '../../services/apiServices';
 import Loader from '../../components/Loader/Loader';
 import CustomDropdown from '../../components/Dropdown/CustomDropdown';
+import Pagination from '../../components/Pagination/Pagination';
 
 const ALL_PROJECTS = 'All Projects';
 const ALL_DEPARTMENTS = 'All Departments';
@@ -73,9 +74,18 @@ const ScrumUpdates = () => {
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Reset to page 1 when any filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterProject, filterDepartment, filterUser, filterDateFrom, filterDateTo]);
 
   const fetchData = async () => {
     try {
@@ -119,7 +129,6 @@ const ScrumUpdates = () => {
     let matchDate = true;
     if (filterDateFrom || filterDateTo) {
       const d = new Date(s.date || s.createdAt);
-      // Format as YYYY-MM-DD using local timezone instead of UTC
       const scrumDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       
       if (filterDateFrom && filterDateTo) {
@@ -133,6 +142,20 @@ const ScrumUpdates = () => {
     
     return matchProject && matchDept && matchUser && matchDate;
   });
+
+  // Sort: Last added/created first
+  const sortedScrums = [...filteredScrums].sort((a, b) => {
+    const dateA = new Date(a.createdAt || a.date);
+    const dateB = new Date(b.createdAt || b.date);
+    return dateB - dateA;
+  });
+
+  // Calculate paginated slice
+  const totalPages = Math.ceil(sortedScrums.length / ITEMS_PER_PAGE) || 1;
+  const paginatedScrums = sortedScrums.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const formatDate = (dateString) => {
     if (!dateString) return '—';
@@ -242,7 +265,7 @@ const ScrumUpdates = () => {
             </div>
           </div>
 
-          {filteredScrums.length > 0 ? (
+          {paginatedScrums.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -257,7 +280,7 @@ const ScrumUpdates = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredScrums.map((scrum) => (
+                  {paginatedScrums.map((scrum) => (
                     <ScrumRow key={scrum._id} scrum={scrum} formatDate={formatDate} />
                   ))}
                 </tbody>
@@ -271,6 +294,14 @@ const ScrumUpdates = () => {
             </div>
           )}
         </div>
+      )}
+
+      {totalPages > 1 && (
+        <Pagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       )}
     </div>
   );

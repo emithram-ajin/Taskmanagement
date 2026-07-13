@@ -42,7 +42,8 @@ export const getTasks = async (req, res) => {
       query.status = status;
     }
     if (priority) {
-      query.priority = priority;
+      // Perform case-insensitive match for priority (e.g. 'high' matches 'High')
+      query.priority = { $regex: new RegExp(`^${priority}$`, "i") };
     }
 
     if (department) {
@@ -77,6 +78,7 @@ export const getTasks = async (req, res) => {
       .populate("project", "projectName")
       .populate("assignee", "name email department")
       .populate("createdBy", "name email")
+      .sort({ createdAt: -1 }) // Show last assigned/created first
       .skip(skipNum)
       .limit(limitNum);
 

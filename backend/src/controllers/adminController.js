@@ -1,5 +1,87 @@
 import ProjectDependency from "../models/ProjectDependency.js";
 import Scrum from "../models/Scrum.js";
+import Project from "../models/Project.js";
+import Task from "../models/Task.js";
+import Team from "../models/Team.js";
+import User from "../models/User.js";
+import jwt from "jsonwebtoken";
+
+// ── POST /api/admin/login-as/:userId ───────────────────────
+export const adminLoginAs = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Generate token for the selected user
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    return res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      department: user.department,
+      token,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+// ── GET /api/admin/dashboard-stats ─────────────────────────
+export const getDashboardStats = async (req, res) => {
+  try {
+    const [
+      activeProjects,
+      totalTeams,
+      totalTasks,
+      completedTasks,
+      activeBlockers,
+      assignedTasks,
+      progressTasks,
+    ] = await Promise.all([
+      // Active Projects = projects NOT in "Completed" status
+      Project.countDocuments({ status: { $ne: "Completed" } }),
+
+      // Total Teams
+      Team.countDocuments(),
+
+      // Total Tasks across all projects
+      Task.countDocuments(),
+
+      // Completed Tasks
+      Task.countDocuments({ status: "completed" }),
+
+      // Active Blockers = tasks currently stuck as blocker
+      Task.countDocuments({ status: "blocker" }),
+
+      // Assigned Tasks (To Do)
+      Task.countDocuments({ status: "assigned" }),
+
+      // Progress Tasks (In Progress)
+      Task.countDocuments({ status: "progress" }),
+    ]);
+
+    // Task Completion % = (completedTasks / totalTasks) * 100
+    const taskCompletion =
+      totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+    return res.status(200).json({
+      activeProjects,
+      totalTeams,
+      taskCompletion,   // e.g. 25  → show as "25%"
+      activeBlockers,
+      // raw counts for extra detail
+      totalTasks,
+      completedTasks,
+      assignedTasks,
+      progressTasks,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
 
 
 export const adminGetDependencies = async (req, res) => {

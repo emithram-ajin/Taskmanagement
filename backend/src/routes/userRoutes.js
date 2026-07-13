@@ -4,6 +4,8 @@ import {
   postDependency,
   getDependencies,
   getDependencyById,
+  deleteDependency,
+  updateDependency,
   getUserProjects,
   updateTaskStatus,
 } from "../controllers/user/userController.js";
@@ -29,6 +31,8 @@ router.patch("/my-tasks/status/:id", protect, updateTaskStatus);
 router.post("/dependency",     protect, postDependency);
 router.get("/dependency",      protect, getDependencies);
 router.get("/dependency/:id",  protect, getDependencyById);
+router.delete("/dependency/:id", protect, deleteDependency);
+router.put("/dependency/:id", protect, updateDependency);
 
 // ── Scrum / Daily Standup routes ───────────────────────────
 router.post("/scrum",          protect, createScrum);      

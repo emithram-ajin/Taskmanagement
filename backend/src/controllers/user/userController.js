@@ -170,6 +170,85 @@ export const getDependencyById = async (req, res) => {
   }
 };
 
+export const deleteDependency = async (req, res) => {
+  try {
+    const dependency = await ProjectDependency.findByIdAndDelete(req.params.id);
+
+    if (!dependency) {
+      return res.status(404).json({ message: "Dependency not found." });
+    }
+
+    return res.status(200).json({
+      message: "Dependency deleted successfully."
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: err.message
+    });
+  }
+};
+
+export const updateDependency = async (req, res) => {
+  try {
+    const { projectName, dependencyName, attributes } = req.body;
+
+    const dependency = await ProjectDependency.findById(req.params.id);
+
+    if (!dependency) {
+      return res.status(404).json({ message: "Dependency not found." });
+    }
+
+    if (!projectName || !projectName.trim()) {
+      return res.status(400).json({ message: "Project name is required." });
+    }
+
+    if (!dependencyName || !dependencyName.trim()) {
+      return res.status(400).json({ message: "Dependency name is required." });
+    }
+
+    // Validate attributes
+    if (attributes !== undefined) {
+      if (!Array.isArray(attributes)) {
+        return res.status(400).json({
+          message: "Attributes must be an array of { key, value } objects.",
+        });
+      }
+
+      for (let i = 0; i < attributes.length; i++) {
+        const attr = attributes[i];
+
+        if (!attr.key || !attr.key.trim()) {
+          return res.status(400).json({
+            message: `Attribute at index ${i} is missing a 'key'.`,
+          });
+        }
+
+        if (attr.value === undefined || attr.value === null) {
+          return res.status(400).json({
+            message: `Attribute at index ${i} is missing a 'value'.`,
+          });
+        }
+      }
+    }
+
+    // Update fields
+    dependency.projectName = projectName.trim();
+    dependency.dependencyName = dependencyName.trim();
+    dependency.attributes = attributes || [];
+
+    const updatedDependency = await dependency.save();
+
+    return res.status(200).json({
+      message: "Dependency updated successfully.",
+      dependency: updatedDependency,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
 export const getUserProjects = async (req, res) => {
   try {
     const projects = await Project.find().select("_id projectName");

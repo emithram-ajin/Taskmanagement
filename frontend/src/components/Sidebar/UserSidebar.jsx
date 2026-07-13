@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutGrid, CheckSquare, KanbanSquare, MessageSquare, AlertCircle, LogOut, X, Menu, ChevronDown, GitBranch } from 'lucide-react';
+import { LayoutGrid, CheckSquare, KanbanSquare, MessageSquare, AlertCircle, LogOut, X, Menu, ChevronDown, GitBranch, AlertTriangle } from 'lucide-react';
 
 // isOpen and onToggle are controlled by the parent layout so the
 // content area can react when the sidebar opens or closes.
-const UserSidebar = ({ isOpen, onToggle }) => {
+// onLogout is called only after the user confirms via the Yes/No prompt.
+const UserSidebar = ({ isOpen, onToggle, onLogout }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const [expandedItem, setExpandedItem] = useState(null);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     const navItems = [
         { label: 'My Tasks', icon: LayoutGrid, path: '/' },
@@ -20,8 +22,8 @@ const UserSidebar = ({ isOpen, onToggle }) => {
             ],
         },
         { label: 'Kanban Board', icon: KanbanSquare, path: '/kanban' },
-        { label: 'Daily Scrum', icon: MessageSquare, path: '/Dailyscrum' },
-        { label: 'Report Blockers', icon: AlertCircle, path: '/BlockerTracking' },
+        { label: 'Daily Scrum', icon: MessageSquare, path: '/daily-scrum' },
+        { label: 'Report Blockers', icon: AlertCircle, path: '/blocker-tracking' },
     ];
 
     const handleNavClick = (item) => {
@@ -29,6 +31,11 @@ const UserSidebar = ({ isOpen, onToggle }) => {
             setExpandedItem(expandedItem === item.label ? null : item.label);
         }
         navigate(item.path);
+    };
+
+    const confirmLogout = () => {
+        setShowLogoutConfirm(false);
+        onLogout?.();
     };
 
     return (
@@ -105,7 +112,10 @@ const UserSidebar = ({ isOpen, onToggle }) => {
 
                 {/* Footer / logout */}
                 <div className="px-4 py-4 border-t border-slate-800">
-                    <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer">
+                    <button
+                        onClick={() => setShowLogoutConfirm(true)}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+                    >
                         <LogOut size={20} />
                         <span>Logout</span>
                     </button>
@@ -120,6 +130,61 @@ const UserSidebar = ({ isOpen, onToggle }) => {
                 >
                     <Menu size={18} />
                 </button>
+            )}
+
+            {/* Logout confirmation modal — centered on screen, large */}
+            {showLogoutConfirm && (
+                <>
+                    {/* Soft backdrop dim, fades in behind the modal */}
+                    <div
+                        onClick={() => setShowLogoutConfirm(false)}
+                        className="fixed inset-0 bg-slate-900/40 z-[59] animate-[logout-backdrop-in_0.25s_ease-out]"
+                    />
+
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 pointer-events-none">
+                        <div className="w-[480px] max-w-[92vw] pointer-events-auto animate-[logout-toast-in_0.35s_cubic-bezier(0.34,1.56,0.64,1)]">
+                            <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl px-8 py-8 flex flex-col gap-6">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-14 h-14 shrink-0 rounded-full bg-rose-500/15 text-rose-400 flex items-center justify-center">
+                                        <AlertTriangle size={28} />
+                                    </div>
+                                    <div>
+                                        <p className="text-xl font-bold text-white">Log out?</p>
+                                        <p className="text-lg text-slate-400 mt-1.5 leading-relaxed">
+                                            You'll need to sign in again to continue using ProjectFlow.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex justify-end gap-3">
+                                    <button
+                                        onClick={() => setShowLogoutConfirm(false)}
+                                        className="px-5 py-2.5 rounded-xl text-md font-semibold text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer"
+                                    >
+                                        No
+                                    </button>
+                                    <button
+                                        onClick={confirmLogout}
+                                        className="px-5 py-2.5 rounded-xl text-md font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-colors cursor-pointer"
+                                    >
+                                        Yes, log out
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <style>{`
+                        @keyframes logout-backdrop-in {
+                            from { opacity: 0; }
+                            to { opacity: 1; }
+                        }
+                        @keyframes logout-toast-in {
+                            0% { opacity: 0; transform: scale(0.9); }
+                            60% { opacity: 1; transform: scale(1.03); }
+                            100% { opacity: 1; transform: scale(1); }
+                        }
+                    `}</style>
+                </>
             )}
         </>
     );

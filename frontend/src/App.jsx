@@ -62,8 +62,8 @@ function App() {
           <Route path="/" element={<UserDashboard />} />
           <Route path="/taskDetails" element={<TaskDetails />} />
           <Route path="/kanban" element={<TaskBoard />} />
-          <Route path="/Dailyscrum" element={<DailyScrum />} />
-          <Route path="/BlockerTracking" element={<BlockerTracking />} />
+          <Route path="/daily-scrum" element={<DailyScrum />} />
+          <Route path="/blocker-tracking" element={<BlockerTracking />} />
           <Route path="/taskDetails/dependencies" element={<Dependencies />} />
         </Routes>
       </UserLayout>

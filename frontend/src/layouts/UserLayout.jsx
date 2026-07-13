@@ -8,7 +8,7 @@ const UserLayout = ({ children, currentUser, onLogout }) => {
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
-      <UserSidebar isOpen={isSidebarOpen} onToggle={setIsSidebarOpen} />
+      <UserSidebar isOpen={isSidebarOpen} onToggle={setIsSidebarOpen} onLogout={onLogout} />
 
       {/* Right side container */}
       <div
@@ -25,13 +25,12 @@ const UserLayout = ({ children, currentUser, onLogout }) => {
           >
             ProjectFlow User Portal
           </div>
-          <button
-            onClick={onLogout}
-            title={currentUser?.username ? `Logout (${currentUser.username})` : 'Logout'}
-            className="w-9 h-9 rounded-full bg-indigo-500 flex items-center justify-center text-white text-sm font-semibold hover:bg-indigo-600 transition-colors cursor-pointer"
+          <div
+            title={currentUser?.username ? currentUser.username : 'User'}
+            className="w-9 h-9 rounded-full bg-indigo-500 flex items-center justify-center text-white text-sm font-semibold select-none"
           >
             PP
-          </button>
+          </div>
         </header>
 
         {/* Dynamic page content */}

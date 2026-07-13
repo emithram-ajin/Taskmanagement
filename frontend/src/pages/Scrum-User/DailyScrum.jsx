@@ -73,11 +73,10 @@ function ModernSelect({ value, options, onChange, placeholder = "Select...", loa
                 type="button"
                 onClick={() => !isDisabled && setOpen((v) => !v)}
                 disabled={isDisabled}
-                className={`w-full flex items-center justify-between gap-2 border rounded-lg p-3 text-sm text-left bg-white transition-all duration-150 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed ${
-                    open
+                className={`w-full flex items-center justify-between gap-2 border rounded-lg p-3 text-sm text-left bg-white transition-all duration-150 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed ${open
                         ? "border-indigo-500 ring-2 ring-indigo-500/30"
                         : "border-slate-300 hover:border-indigo-300"
-                }`}
+                    }`}
             >
                 <span className={`flex items-center gap-2 truncate ${selected ? "text-slate-700" : "text-slate-400"}`}>
                     {Icon && <Icon size={15} className="text-slate-400 shrink-0" />}
@@ -92,11 +91,10 @@ function ModernSelect({ value, options, onChange, placeholder = "Select...", loa
             </button>
 
             <div
-                className={`absolute z-20 mt-1.5 w-full bg-white border border-slate-200 rounded-lg shadow-lg py-1 max-h-56 overflow-y-auto origin-top transition-all duration-150 ${
-                    open
+                className={`absolute z-20 mt-1.5 w-full bg-white border border-slate-200 rounded-lg shadow-lg py-1 max-h-56 overflow-y-auto origin-top transition-all duration-150 ${open
                         ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
                         : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
-                }`}
+                    }`}
             >
                 {options.length === 0 && !loading && (
                     <div className="px-3 py-2 text-sm text-slate-400">No projects available</div>
@@ -111,11 +109,10 @@ function ModernSelect({ value, options, onChange, placeholder = "Select...", loa
                                 onChange(option.value);
                                 setOpen(false);
                             }}
-                            className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left transition-colors duration-100 ${
-                                isSelected
+                            className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left transition-colors duration-100 ${isSelected
                                     ? "bg-indigo-50 text-indigo-700 font-medium"
                                     : "text-slate-700 hover:bg-slate-50"
-                            }`}
+                                }`}
                         >
                             {option.label}
                             {isSelected && <Check size={14} className="text-indigo-600" />}
@@ -142,8 +139,8 @@ function ToastStack({ toasts, onDismiss }) {
                     key={toast.id}
                     role="alert"
                     className={`flex items-start gap-2.5 rounded-lg border px-4 py-3 shadow-lg backdrop-blur-sm animate-[toast-in_0.2s_ease-out] ${toast.type === "error"
-                            ? "bg-rose-50 border-rose-200 text-rose-700"
-                            : "bg-emerald-50 border-emerald-200 text-emerald-700"
+                        ? "bg-rose-50 border-rose-200 text-rose-700"
+                        : "bg-emerald-50 border-emerald-200 text-emerald-700"
                         }`}
                 >
                     {toast.type === "error" ? (
@@ -309,44 +306,30 @@ export default function DailyScrum() {
         };
 
         setSubmitting(true);
+
         try {
             await userapiservicer.createScrum(payload);
+
             resetForm();
             showToast("success", "Your standup update was submitted successfully.");
             fetchUpdates(1);
+
         } catch (err) {
-            // Backend responds 409 when today's entry for this project already
-            // exists, and includes the existing scrum's id — fall back to
-            // updating that entry instead of failing the submission.
-            if (err.response?.status === 409 && err.response?.data?.scrumId) {
-                const scrumId = err.response.data.scrumId;
-                // Only send the fields that should actually change here.
-                // NOT `project` — the existing entry already belongs to the
-                // right project, and sending `payload.project` would
-                // silently reassign it to whatever project is currently
-                // selected in the form, overwriting the original entry.
-                const conflictPayload = {
-                    doYesterday: payload.doYesterday,
-                    doToday: payload.doToday,
-                    blockers: payload.blockers,
-                };
-                try {
-                    await userapiservicer.updateScrum(scrumId, conflictPayload);
-                    resetForm();
-                    showToast(
-                        "success",
-                        "You'd already submitted for this project today, so your existing entry was updated instead."
-                    );
-                    fetchUpdates(1);
-                } catch (updateErr) {
-                    console.error("Failed to update existing entry after 409:", updateErr);
-                    showToast("error", updateErr.response?.data?.message || "Couldn't update your existing entry.");
-                }
+            console.error("Failed to submit update:", err);
+
+            if (err.response?.status === 409) {
+                showToast(
+                    "error",
+                    "You have already submitted today's scrum for this project. Please use the Edit button if you want to make changes."
+                );
             } else {
-                console.error("Failed to submit update:", err);
                 const serverMessage = err.response?.data?.message;
-                showToast("error", serverMessage || "Couldn't submit your update. Please try again.");
+                showToast(
+                    "error",
+                    serverMessage || "Couldn't submit your update. Please try again."
+                );
             }
+
         } finally {
             setSubmitting(false);
         }
@@ -675,8 +658,8 @@ export default function DailyScrum() {
                                             onClick={() => goToPage(page)}
                                             disabled={loading}
                                             className={`w-8 h-8 text-[13px] font-medium rounded-lg transition-colors duration-150 ${page === currentPage
-                                                    ? "bg-indigo-600 text-white"
-                                                    : "text-slate-600 hover:bg-slate-100"
+                                                ? "bg-indigo-600 text-white"
+                                                : "text-slate-600 hover:bg-slate-100"
                                                 } disabled:opacity-60`}
                                         >
                                             {page}

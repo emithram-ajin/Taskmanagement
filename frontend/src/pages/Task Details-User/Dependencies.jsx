@@ -3,7 +3,6 @@ import { FolderGit2, Plus, X, ChevronDown, Trash2, Pencil, Loader2 } from 'lucid
 import userapiservicer from '../../services/userapiServices';
 
 
-const PROJECT_OPTIONS = ['Dashboard Redesign', 'Mobile App Launch', 'API Platform Upgrade'];
 const ALL_PROJECTS = 'All Projects';
 
 function emptyRow() {
@@ -25,9 +24,10 @@ function normalizeDependency(dep) {
 }
 
 // ModernSelect component unchanged — keep exactly as you have it
-function ModernSelect({ value, options, onChange, className = '' }) {
+function ModernSelect({ value, options, onChange, className = '', loading, disabled }) {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
+    const isDisabled = disabled || loading;
 
     useEffect(() => {
         function handleClickOutside(e) {
@@ -43,21 +43,22 @@ function ModernSelect({ value, options, onChange, className = '' }) {
         <div ref={ref} className={`relative ${className}`}>
             <button
                 type="button"
-                onClick={() => setOpen((v) => !v)}
-                className={`w-full flex items-center justify-between gap-3 border rounded-lg px-3.5 py-2.5 text-sm font-medium text-slate-700 bg-white shadow-sm transition-all duration-150 cursor-pointer ${
+                onClick={() => !isDisabled && setOpen((v) => !v)}
+                disabled={isDisabled}
+                className={`w-full flex items-center justify-between gap-3 border rounded-lg px-3.5 py-2.5 text-sm font-medium text-slate-700 bg-white shadow-sm transition-all duration-150 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
                     open
                         ? 'border-indigo-500 ring-2 ring-indigo-500/40'
                         : 'border-slate-300 hover:shadow-md hover:border-indigo-300'
                 }`}
             >
-                <span className="truncate">{value}</span>
+                <span className="truncate">{loading ? 'Loading projects...' : value}</span>
                 <ChevronDown
                     size={16}
                     className={`text-slate-400 shrink-0 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
                 />
             </button>
 
-            {open && (
+            {open && !loading && (
                 <div className="absolute right-0 z-40 mt-1.5 w-full min-w-[200px] bg-white border border-slate-200 rounded-xl shadow-xl p-1.5">
                     {options.map((option) => {
                         const isSelected = option === value;
@@ -79,6 +80,10 @@ function ModernSelect({ value, options, onChange, className = '' }) {
                             </button>
                         );
                     })}
+
+                    {options.length === 0 && (
+                        <div className="px-4 py-2.5 text-sm text-slate-400">No projects available</div>
+                    )}
                 </div>
             )}
         </div>
@@ -90,6 +95,9 @@ export default function Dependencies() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+
+    const [projectNames, setProjectNames] = useState([]);
+    const [projectsLoading, setProjectsLoading] = useState(true);
 
     const [filterProject, setFilterProject] = useState(ALL_PROJECTS);
 
@@ -118,8 +126,30 @@ export default function Dependencies() {
         }
     };
 
+    // --- Fetch projects from API for the dropdowns ---
+    const fetchProjects = async () => {
+        setProjectsLoading(true);
+        try {
+            const res = await userapiservicer.getProjects();
+            const list = Array.isArray(res) ? res : res?.projects || [];
+            const names = list.map((p) => p.projectName).filter(Boolean);
+            setProjectNames(names);
+        } catch (err) {
+            console.error('Failed to fetch projects:', err);
+            // Fallback: derive project names from whatever dependencies are
+            // already loaded, so the dropdowns still work if this call fails.
+            setProjectNames((prev) =>
+                prev.length > 0 ? prev : Array.from(new Set(dependencies.map((d) => d.project)))
+            );
+        } finally {
+            setProjectsLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchDependencies();
+        fetchProjects();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const toggleTag = (tagId) => {
@@ -233,8 +263,9 @@ export default function Dependencies() {
 
                     <ModernSelect
                         value={filterProject}
-                        options={[ALL_PROJECTS, ...PROJECT_OPTIONS]}
+                        options={[ALL_PROJECTS, ...projectNames]}
                         onChange={setFilterProject}
+                        loading={projectsLoading}
                         className="min-w-[220px]"
                     />
                 </div>
@@ -419,8 +450,9 @@ export default function Dependencies() {
                                 </label>
                                 <ModernSelect
                                     value={project || 'Select Project'}
-                                    options={PROJECT_OPTIONS}
+                                    options={projectNames}
                                     onChange={setProject}
+                                    loading={projectsLoading}
                                     className="w-full"
                                 />
                             </div>

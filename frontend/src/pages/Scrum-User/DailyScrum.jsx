@@ -292,7 +292,7 @@ export default function DailyScrum() {
         });
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = async () => {``
         if (!yesterday.trim() || !today.trim() || !selectedProject) {
             showToast("error", "Please select a project and fill in both Yesterday and Today.");
             return;

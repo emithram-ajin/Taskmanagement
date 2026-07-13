@@ -744,7 +744,7 @@ export default function Dependencies() {
                         <div className="w-[480px] max-w-[92vw] pointer-events-auto animate-[del-toast-in_0.35s_cubic-bezier(0.34,1.56,0.64,1)]">
                             <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl px-8 py-8 flex flex-col gap-6">
                                 <div className="flex items-start gap-4">
-                                    <div className="w-14 h-14 shrink-0 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
+                                    <div className="w-14 h-14 shrink-0 rounded-full bg-blue-50 text-blue-200 flex items-center justify-center">
                                         <Trash2 size={24} />
                                     </div>
                                     <div>

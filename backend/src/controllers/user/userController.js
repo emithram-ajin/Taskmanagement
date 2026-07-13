@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import Task from "../../models/task.js";
+import Task from "../../models/Task.js";
 import ProjectDependency from "../../models/ProjectDependency.js";
 import Team from "../../models/Team.js";
 import Project from "../../models/Project.js";

@@ -159,7 +159,10 @@ export const getMyDepartmentMembers = async (req, res) => {
     if (!department) {
       return res.status(400).json({ message: "User does not belong to any department." });
     }
-    const members = await User.find({ department }).select("_id name email department");
+    const members = await User.find({ 
+      department,
+      _id: { $ne: req.user._id }
+    }).select("_id name email department");
     res.status(200).json(members);
   } catch (err) {
     res.status(500).json({ message: err.message });

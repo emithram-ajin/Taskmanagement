@@ -71,6 +71,7 @@ export const getBlockedTasks = async (req, res) => {
     })
       .populate("project", "projectName status")
       .populate("assignee", "name email department")
+      .populate("blockerAssignee", "name email department role")
       .populate("createdBy", "name email")
       .sort({ deadline: 1 });
 

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { FolderKanban, Pencil, Trash2 } from 'lucide-react';
 import CreateProjectModal from '../../components/Modal/CreateProjectModal';
+import ConfirmModal from "../../components/Modal/ConfirmModal";
 import apiServices from '../../services/apiServices';
 import Loader from '../../components/Loader/Loader';
 
 const Projects = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editProject, setEditProject] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
 
   const [projects, setProjects] = useState([]);
   const [allTeams, setAllTeams] = useState([]);
@@ -66,10 +68,10 @@ const Projects = () => {
   };
 
   const handleDeleteProject = async (projectId) => {
-    if (!window.confirm("Are you sure you want to delete this project?")) return;
     try {
       await apiServices.deleteProject(projectId);
       setProjects(projects.filter(p => p._id !== projectId));
+      setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
       console.error("Failed to delete project:", error);
       alert("Failed to delete project");
@@ -131,7 +133,7 @@ const Projects = () => {
                   <Pencil className="w-4 h-4" />
                 </button>
                 <button 
-                  onClick={() => handleDeleteProject(project._id)}
+                  onClick={() => setDeleteConfirm({ isOpen: true, id: project._id })}
                   className="hover:text-rose-600 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -173,6 +175,14 @@ const Projects = () => {
         onSave={handleSaveProject}
         allTeams={allTeams}
         project={editProject}
+      />
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
+        onConfirm={() => handleDeleteProject(deleteConfirm.id)}
+        title="Delete Project"
+        message="Are you sure you want to delete this project? This action cannot be undone."
       />
     </div>
   );

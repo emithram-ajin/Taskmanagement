@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Users, Pencil, Trash2, Mail, UserPlus, Shield } from "lucide-react";
 import Modal from "../../components/Modal/Modal";
+import ConfirmModal from "../../components/Modal/ConfirmModal";
 import Loader from "../../components/Loader/Loader";
 import apiServices from "../../services/apiServices";
 import CustomDropdown from "../../components/Dropdown/CustomDropdown";
@@ -126,6 +127,7 @@ const CreateMemberModal = ({
 
 const Members = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
   const [departments] = useState(["HR", "IT", "Sales", "Marketing"]);
   const [filterDepartment, setFilterDepartment] = useState("");
 
@@ -171,10 +173,10 @@ const Members = () => {
   };
 
   const handleDeleteMember = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this member?")) return;
     try {
       await apiServices.deleteMember(id);
       setMembers(members.filter((m) => m.id !== id));
+      setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
       console.error("Error deleting member:", error);
       alert("Failed to delete member.");
@@ -294,7 +296,7 @@ const Members = () => {
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button 
-                          onClick={() => handleDeleteMember(member.id)}
+                          onClick={() => setDeleteConfirm({ isOpen: true, id: member.id })}
                           className="text-slate-400 hover:text-rose-600 p-1 rounded transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -314,6 +316,13 @@ const Members = () => {
         onClose={() => setIsModalOpen(false)}
         onSave={handleAddMember}
         departments={departments}
+      />
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
+        onConfirm={() => handleDeleteMember(deleteConfirm.id)}
+        title="Delete Member"
+        message="Are you sure you want to delete this member? This action cannot be undone."
       />
     </div>
   );

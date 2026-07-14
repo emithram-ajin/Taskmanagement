@@ -3,6 +3,7 @@ import { Users, Pencil, Trash2, UserPlus } from "lucide-react";
 import CreateTeamModal from "../../components/Modal/CreateTeamModal";
 import EditTeamModal from "../../components/Modal/EditTeamModal";
 import AddMemberModal from "../../components/Modal/AddMemberModal";
+import ConfirmModal from "../../components/Modal/ConfirmModal";
 import apiServices from "../../services/apiServices";
 import Loader from "../../components/Loader/Loader";
 
@@ -10,6 +11,7 @@ const Teams = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
   const [teamToEdit, setTeamToEdit] = useState(null);
   const [expandedTeams, setExpandedTeams] = useState({});
 
@@ -66,7 +68,6 @@ const Teams = () => {
   };
 
   const handleDeleteTeam = async (teamId) => {
-    if (!window.confirm("Are you sure you want to delete this team?")) return;
     try {
       await apiServices.deleteTeam(teamId);
       setTeams(teams.filter((t) => t._id !== teamId));
@@ -129,7 +130,7 @@ const Teams = () => {
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleDeleteTeam(team._id)}
+                    onClick={() => setDeleteConfirm({ isOpen: true, id: team._id })}
                     className="hover:text-rose-600 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -206,6 +207,14 @@ const Teams = () => {
         team={teamToEdit}
         onSave={handleUpdateTeam}
         allMembers={allMembers}
+      />
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
+        onConfirm={() => handleDeleteTeam(deleteConfirm.id)}
+        title="Delete Team"
+        message="Are you sure you want to delete this team? This action cannot be undone."
       />
     </div>
   );

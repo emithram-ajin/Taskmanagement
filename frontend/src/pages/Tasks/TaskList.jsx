@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Pencil, Trash2, Clock, CheckCircle2, AlertCircle, PlayCircle } from 'lucide-react';
 import CreateTaskModal from '../../components/Modal/CreateTaskModal';
+import ConfirmModal from "../../components/Modal/ConfirmModal";
 import apiServices from '../../services/apiServices';
 import Loader from '../../components/Loader/Loader';
 import CustomDropdown from '../../components/Dropdown/CustomDropdown';
@@ -8,6 +9,7 @@ import Pagination from '../../components/Pagination/Pagination';
 
 const TaskList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
   const [editTask, setEditTask] = useState(null);
 
   const [filterProject, setFilterProject] = useState('');
@@ -77,10 +79,10 @@ const TaskList = () => {
   };
 
   const handleDeleteTask = async (taskId) => {
-    if (!window.confirm("Are you sure you want to delete this task?")) return;
     try {
       await apiServices.deleteTask(taskId);
       setTasks(tasks.filter(t => t._id !== taskId));
+      setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
       console.error("Failed to delete task:", error);
       alert("Failed to delete task");
@@ -251,7 +253,7 @@ const TaskList = () => {
                       <Pencil className="w-4 h-4" />
                     </button>
                     <button 
-                      onClick={() => handleDeleteTask(task._id)}
+                      onClick={() => setDeleteConfirm({ isOpen: true, id: task._id })}
                       className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -281,6 +283,14 @@ const TaskList = () => {
         allProjects={allProjects}
         allMembers={allMembers}
         task={editTask}
+      />
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
+        onConfirm={() => handleDeleteTask(deleteConfirm.id)}
+        title="Delete Task"
+        message="Are you sure you want to delete this task? This action cannot be undone."
       />
     </div>
   );

@@ -1,96 +1,92 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Plus, AlertCircle, CheckCircle2, X, Check, ChevronDown, ClipboardList } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { AlertCircle, ShieldAlert, Loader2, Pencil, X, Check, ChevronDown, User } from "lucide-react";
+import userapiservicer from "../../services/userapiServices";
 
-const CURRENT_USER = "Priya Patel";
+// Normalizes a raw task doc from GET /user/blocked-tasks or
+// GET /user/my-blockers into the shape this page's UI renders.
+function normalizeBlockedTask(task) {
+    return {
+        id: task._id,
+        title: task.title,
+        description: task.description,
+        project: task.project?.projectName || "—",
+        assignee: task.assignee?.name || "Unassigned",
+        deadline: task.deadline ? new Date(task.deadline) : null,
+        createdBy: task.createdBy?.name || "—",
+        blockerReason: task.blockerReason || "",
+        blockerAssigneeId: task.blockerAssignee?._id || "",
+        blockerAssigneeName: task.blockerAssignee?.name || "",
+    };
+}
 
-const TASK_OPTIONS = [
-    "Push notification service",
-    "Implement analytics charts",
-    "API endpoint optimization",
-];
-
-const initialBlockers = [
-    {
-        id: 1,
-        description: "Missing database credentials for production migration",
-        task: "Database migration",
-        reporter: "Priya Patel",
-        reported: "Apr 9, 2026",
-        status: "open",
-    },
-];
-
-function formatToday() {
-    return new Date().toLocaleDateString("en-US", {
+function formatDate(dateInput) {
+    if (!dateInput) return "—";
+    return dateInput.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
     });
 }
 
-// Modern animated dropdown — replaces the plain native <select>. Opens with
-// a fade + scale + slight slide, chevron rotates, options highlight on
-// hover/selection.
-function ModernSelect({ value, options, onChange, placeholder = "Select...", icon: Icon }) {
+// Modern animated dropdown for picking a department member to assign the
+// blocker to. Options are { value: memberId, label: memberName }.
+function ModernSelect({ value, options, onChange, loading, placeholder = "Select a member" }) {
     const [open, setOpen] = useState(false);
-    const ref = useRef(null);
+    const ref = React.useRef(null);
 
     useEffect(() => {
         function handleClickOutside(e) {
-            if (ref.current && !ref.current.contains(e.target)) {
-                setOpen(false);
-            }
+            if (ref.current && !ref.current.contains(e.target)) setOpen(false);
         }
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    const selected = options.find((o) => o.value === value);
+
     return (
         <div ref={ref} className="relative">
             <button
                 type="button"
-                onClick={() => setOpen((v) => !v)}
-                className={`w-full flex items-center justify-between gap-2 border rounded-lg px-3 py-2.5 text-[13px] text-left bg-white transition-all duration-150 ${
-                    open
-                        ? "border-rose-500 ring-2 ring-rose-500/30"
-                        : "border-slate-300 hover:border-rose-300"
+                onClick={() => !loading && setOpen((v) => !v)}
+                disabled={loading}
+                className={`w-full flex items-center justify-between gap-2 border rounded-lg px-3 py-2.5 text-sm text-left bg-white transition-all duration-150 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed ${
+                    open ? "border-indigo-500 ring-2 ring-indigo-500/30" : "border-slate-300 hover:border-indigo-300"
                 }`}
             >
-                <span className={`flex items-center gap-2 truncate ${value ? "text-slate-800" : "text-slate-400"}`}>
-                    {Icon && <Icon size={14} className="text-slate-400 shrink-0" />}
-                    <span className="truncate">{value || placeholder}</span>
+                <span className={`flex items-center gap-2 truncate ${selected ? "text-slate-700" : "text-slate-400"}`}>
+                    <User size={14} className="text-slate-400 shrink-0" />
+                    <span className="truncate">
+                        {loading ? "Loading members..." : selected ? selected.label : placeholder}
+                    </span>
                 </span>
-                <ChevronDown
-                    size={16}
-                    className={`text-slate-400 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-                />
+                <ChevronDown size={16} className={`text-slate-400 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
             </button>
 
             <div
-                className={`absolute z-20 mt-1.5 w-full bg-white border border-slate-200 rounded-lg shadow-lg py-1 origin-top transition-all duration-150 ${
-                    open
-                        ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
-                        : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
+                className={`absolute z-20 mt-1.5 w-full bg-white border border-slate-200 rounded-lg shadow-lg py-1 max-h-56 overflow-y-auto origin-top transition-all duration-150 ${
+                    open ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
                 }`}
             >
+                {options.length === 0 && !loading && (
+                    <div className="px-3 py-2 text-sm text-slate-400">No members found</div>
+                )}
                 {options.map((option) => {
-                    const isSelected = option === value;
+                    const isSelected = option.value === value;
                     return (
                         <button
-                            key={option}
+                            key={option.value}
                             type="button"
                             onClick={() => {
-                                onChange(option);
+                                onChange(option.value);
                                 setOpen(false);
                             }}
-                            className={`w-full flex items-center justify-between px-3 py-2 text-[13px] text-left transition-colors duration-100 ${
-                                isSelected
-                                    ? "bg-rose-50 text-rose-700 font-medium"
-                                    : "text-slate-700 hover:bg-slate-50"
+                            className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left transition-colors duration-100 ${
+                                isSelected ? "bg-indigo-50 text-indigo-700 font-medium" : "text-slate-700 hover:bg-slate-50"
                             }`}
                         >
-                            {option}
-                            {isSelected && <Check size={14} className="text-rose-600" />}
+                            {option.label}
+                            {isSelected && <Check size={14} className="text-indigo-600" />}
                         </button>
                     );
                 })}
@@ -100,53 +96,148 @@ function ModernSelect({ value, options, onChange, placeholder = "Select...", ico
 }
 
 export default function BlockerTracking() {
-    const [blockers, setBlockers] = useState(initialBlockers);
-    const [showForm, setShowForm] = useState(false);
-    const [description, setDescription] = useState("");
-    const [task, setTask] = useState("");
+    const [blockedTasks, setBlockedTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const openBlockers = blockers.filter((b) => b.status === "open");
-    const resolvedBlockers = blockers.filter((b) => b.status === "resolved");
+    // Blockers assigned to me (tasks where I'm the blockerAssignee, i.e.
+    // someone needs *my* help to unblock them)
+    const [myBlockers, setMyBlockers] = useState([]);
+    const [myBlockersLoading, setMyBlockersLoading] = useState(true);
+    const [myBlockersError, setMyBlockersError] = useState(null);
 
-    const handleReport = () => {
-        if (!description.trim() || !task) return;
+    // Department members, for the Assign-to dropdown
+    const [members, setMembers] = useState([]);
+    const [membersLoading, setMembersLoading] = useState(true);
 
-        const newBlocker = {
-            id: Date.now(),
-            description: description.trim(),
-            task,
-            reporter: CURRENT_USER,
-            reported: formatToday(),
-            status: "open",
-        };
+    // Edit modal state
+    const [editingTask, setEditingTask] = useState(null);
+    const [reason, setReason] = useState("");
+    const [assigneeId, setAssigneeId] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState(null);
 
-        setBlockers((prev) => [newBlocker, ...prev]);
-        setDescription("");
-        setTask("");
-        setShowForm(false);
+    const fetchBlockedTasks = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await userapiservicer.getBlockedTasks();
+            const list = Array.isArray(data) ? data : data?.tasks || [];
+            setBlockedTasks(list.map(normalizeBlockedTask));
+        } catch (err) {
+            console.error("Failed to fetch blocked tasks:", err);
+            setError(err?.response?.data?.message || "Failed to load blocked tasks");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleResolve = (id) => {
-        setBlockers((prev) =>
-            prev.map((b) => (b.id === id ? { ...b, status: "resolved" } : b))
-        );
+    const fetchMyBlockers = async () => {
+        setMyBlockersLoading(true);
+        setMyBlockersError(null);
+        try {
+            const data = await userapiservicer.getMyBlockers();
+            const list = Array.isArray(data) ? data : data?.tasks || [];
+            setMyBlockers(list.map(normalizeBlockedTask));
+        } catch (err) {
+            console.error("Failed to fetch my blockers:", err);
+            setMyBlockersError(err?.response?.data?.message || "Failed to load your blockers");
+        } finally {
+            setMyBlockersLoading(false);
+        }
+    };
+
+    const fetchMembers = async () => {
+        setMembersLoading(true);
+        try {
+            const data = await userapiservicer.getMyDepartmentMembers();
+            const list = Array.isArray(data) ? data : data?.members || [];
+            setMembers(list);
+        } catch (err) {
+            console.error("Failed to fetch department members:", err);
+        } finally {
+            setMembersLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchBlockedTasks();
+        fetchMyBlockers();
+        fetchMembers();
+    }, []);
+
+    const memberOptions = members.map((m) => ({ value: m._id, label: m.name }));
+
+    const openEditModal = (task) => {
+        setEditingTask(task);
+        setReason(task.blockerReason || "");
+        setAssigneeId(task.blockerAssigneeId || "");
+        setSaveError(null);
+    };
+
+    const closeEditModal = () => {
+        setEditingTask(null);
+        setReason("");
+        setAssigneeId("");
+        setSaveError(null);
+    };
+
+    const handleSaveReason = async () => {
+        if (!editingTask) return;
+
+        if (!reason.trim()) {
+            setSaveError("Blocker reason is required.");
+            return;
+        }
+        if (!assigneeId) {
+            setSaveError("Please select a member to assign this blocker to.");
+            return;
+        }
+
+        setSaving(true);
+        setSaveError(null);
+        try {
+            const res = await userapiservicer.updateBlockerReason(editingTask.id, {
+                blockerReason: reason,
+                blockerAssignee: assigneeId,
+            });
+            const updatedDoc = res?.task || res;
+            const assignedMember = members.find((m) => m._id === assigneeId);
+
+            setBlockedTasks((prev) =>
+                prev.map((t) =>
+                    t.id === editingTask.id
+                        ? {
+                              ...t,
+                              blockerReason: updatedDoc?.blockerReason ?? reason,
+                              blockerAssigneeId: updatedDoc?.blockerAssignee?._id || assigneeId,
+                              blockerAssigneeName: updatedDoc?.blockerAssignee?.name || assignedMember?.name || t.blockerAssigneeName,
+                          }
+                        : t
+                )
+            );
+            closeEditModal();
+
+            // The blocker's assignment may have changed to/away from someone
+            // else, which affects the "My Blockers" list — refresh it so it
+            // stays in sync (e.g. reassigning a blocker away from yourself
+            // should make it disappear from your own list, and assigning a
+            // blocker to yourself should make it appear).
+            fetchMyBlockers();
+        } catch (err) {
+            console.error("Failed to save reason:", err);
+            setSaveError(err?.response?.data?.message || "Failed to save changes");
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
         <div className="min-h-screen bg-slate-50 px-8 py-6">
             {/* Page Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                <div>
-                    <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">Blocker Tracking</h1>
-                    <p className="text-slate-700 text-[16px] mt-1">Report issues blocking your tasks</p>
-                </div>
-                <button
-                    onClick={() => setShowForm(true)}
-                    className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-semibold text-md rounded-lg px-5 py-2.5 transition-colors duration-150 self-start sm:self-auto"
-                >
-                    <Plus className="w-4 h-4" />
-                    Report Blocker
-                </button>
+            <div className="mb-6">
+                <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">Blocker Tracking</h1>
+                <p className="text-slate-700 text-[16px] mt-1">Tasks currently blocked and assigned to you</p>
             </div>
 
             {/* Columns */}
@@ -158,130 +249,183 @@ export default function BlockerTracking() {
                             <AlertCircle className="w-5 h-5" />
                         </div>
                         <h2 className="text-[20px] font-semibold text-slate-900">
-                            Open Blockers ({openBlockers.length})
+                            Open Blockers {!loading && !error && `(${blockedTasks.length})`}
                         </h2>
                     </div>
 
-                    <div className="flex flex-col gap-3">
-                        {openBlockers.map((blocker) => (
-                            <div
-                                key={blocker.id}
-                                className="bg-rose-50 border border-rose-100 rounded-lg p-4"
-                            >
-                                <div className="flex items-start justify-between gap-3 mb-2">
-                                    <p className="text-[15px] font-semibold text-rose-900 leading-snug">
-                                        {blocker.description}
-                                    </p>
-                                    <button
-                                        onClick={() => handleResolve(blocker.id)}
-                                        title="Mark as resolved"
-                                        className="shrink-0 w-7 h-7 flex items-center justify-center rounded-md bg-white border border-rose-200 text-rose-600 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-colors duration-150"
-                                    >
-                                        <Check className="w-4 h-4" />
-                                    </button>
+                    {loading ? (
+                        <div className="flex items-center gap-2 text-slate-400 text-sm py-6">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Loading blocked tasks...
+                        </div>
+                    ) : error ? (
+                        <p className="text-rose-500 text-sm py-4">{error}</p>
+                    ) : (
+                        <div className="flex flex-col gap-3">
+                            {blockedTasks.map((task) => (
+                                <div
+                                    key={task.id}
+                                    className="bg-rose-50 border border-rose-100 rounded-lg p-4"
+                                >
+                                    <div className="flex items-start justify-between gap-2 mb-2">
+                                        <p className="text-[15px] font-semibold text-rose-900 leading-snug">
+                                            {task.title}
+                                        </p>
+                                        <button
+                                            onClick={() => openEditModal(task)}
+                                            title="Edit blocker"
+                                            className="shrink-0 w-7 h-7 flex items-center justify-center rounded-md bg-white border border-rose-200 text-rose-600 hover:bg-rose-100 transition-colors duration-150 cursor-pointer"
+                                        >
+                                            <Pencil className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                    {task.description && (
+                                        <p className="text-[13px] text-rose-700 mb-2">{task.description}</p>
+                                    )}
+                                    <p className="text-[14px] text-rose-700">Project: {task.project}</p>
+                                    <p className="text-[14px] text-rose-700">Assignee: {task.assignee}</p>
+                                    <p className="text-[14px] text-rose-700">Deadline: {formatDate(task.deadline)}</p>
+                                    <p className="text-[14px] text-rose-700">Assigned by: {task.createdBy}</p>
+                                    {task.blockerReason && (
+                                        <p className="text-[14px] text-rose-700 mt-1">
+                                            <span className="font-semibold">Reason:</span> {task.blockerReason}
+                                        </p>
+                                    )}
+                                    {task.blockerAssigneeName && (
+                                        <p className="text-[14px] text-rose-700">
+                                            <span className="font-semibold">Blocker assigned to:</span> {task.blockerAssigneeName}
+                                        </p>
+                                    )}
                                 </div>
-                                <p className="text-[14px] text-rose-700">Task: {blocker.task}</p>
-                                <p className="text-[14px] text-rose-700">Reporter: {blocker.reporter}</p>
-                                <p className="text-[14px] text-rose-700">Reported: {blocker.reported}</p>
-                            </div>
-                        ))}
+                            ))}
 
-                        {openBlockers.length === 0 && (
-                            <p className="text-slate-400 text-sm">No open blockers 🎉</p>
-                        )}
-                    </div>
+                            {blockedTasks.length === 0 && (
+                                <p className="text-slate-400 text-sm">No open blockers 🎉</p>
+                            )}
+                        </div>
+                    )}
                 </div>
 
-                {/* Resolved */}
+                {/* My Blockers — tasks where someone assigned ME to resolve their blocker */}
                 <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col h-full min-h-[260px]">
                     <div className="flex items-center gap-3 mb-5">
-                        <div className="w-9 h-9 shrink-0 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                            <CheckCircle2 className="w-5 h-5" />
+                        <div className="w-9 h-9 shrink-0 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                            <ShieldAlert className="w-5 h-5" />
                         </div>
                         <h2 className="text-[20px] font-semibold text-slate-900">
-                            Resolved ({resolvedBlockers.length})
+                            My Blockers {!myBlockersLoading && !myBlockersError && `(${myBlockers.length})`}
                         </h2>
                     </div>
 
-                    <div className="flex flex-col gap-3">
-                        {resolvedBlockers.map((blocker) => (
-                            <div
-                                key={blocker.id}
-                                className="bg-emerald-50 border border-emerald-100 rounded-lg p-4"
-                            >
-                                <p className="text-[15px] font-normal text-emerald-900 leading-snug mb-2  decoration-emerald-400">
-                                    {blocker.description}
-                                </p>
-                                <p className="text-[13px] text-emerald-700">Task: {blocker.task}</p>
-                                <p className="text-[14px] text-emerald-700">Reporter: {blocker.reporter}</p>
-                                <p className="text-[13px] text-emerald-700">Reported: {blocker.reported}</p>
-                            </div>
-                        ))}
+                    {myBlockersLoading ? (
+                        <div className="flex items-center gap-2 text-slate-400 text-sm py-6">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Loading your blockers...
+                        </div>
+                    ) : myBlockersError ? (
+                        <p className="text-rose-500 text-sm py-4">{myBlockersError}</p>
+                    ) : (
+                        <div className="flex flex-col gap-3">
+                            {myBlockers.map((task) => (
+                                <div
+                                    key={task.id}
+                                    className="bg-indigo-50 border border-indigo-100 rounded-lg p-4"
+                                >
+                                    <p className="text-[15px] font-semibold text-indigo-900 leading-snug mb-2">
+                                        {task.title}
+                                    </p>
+                                    {task.description && (
+                                        <p className="text-[13px] text-indigo-700 mb-2">{task.description}</p>
+                                    )}
+                                    <p className="text-[14px] text-indigo-700">Project: {task.project}</p>
+                                    <p className="text-[14px] text-indigo-700">Task owner: {task.assignee}</p>
+                                    <p className="text-[14px] text-indigo-700">Deadline: {formatDate(task.deadline)}</p>
+                                    {task.blockerReason && (
+                                        <p className="text-[14px] text-indigo-700 mt-1">
+                                            <span className="font-semibold">Reason:</span> {task.blockerReason}
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
 
-                        {resolvedBlockers.length === 0 && (
-                            <p className="text-slate-400 text-md">No resolved blockers yet</p>
-                        )}
-                    </div>
+                            {myBlockers.length === 0 && (
+                                <p className="text-slate-400 text-md">No blockers assigned to you 🎉</p>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Report Blocker Modal */}
-            {showForm && (
+            {/* Edit Blocker Modal — reason + assign-to only */}
+            {editingTask && (
                 <div
                     className="fixed inset-0 bg-slate-900/40 flex items-center justify-center p-4 z-50"
-                    onClick={() => setShowForm(false)}
+                    onClick={closeEditModal}
                 >
                     <div
                         onClick={(e) => e.stopPropagation()}
                         className="bg-white rounded-xl border border-slate-200 shadow-lg w-full max-w-md p-6"
                     >
                         <div className="flex items-center justify-between mb-5">
-                            <h2 className="text-lg font-bold text-slate-900">Report Blocker</h2>
+                            <div>
+                                <h2 className="text-lg font-bold text-slate-900">Edit Blocker</h2>
+                                <p className="text-xs text-slate-400 mt-0.5">{editingTask.title}</p>
+                            </div>
                             <button
-                                onClick={() => setShowForm(false)}
-                                className="text-slate-400 hover:text-slate-600"
+                                onClick={closeEditModal}
+                                className="text-slate-400 hover:text-slate-600 cursor-pointer"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <div className="flex flex-col gap-5">
+                        <div className="flex flex-col gap-4">
+                            {saveError && (
+                                <div className="text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+                                    {saveError}
+                                </div>
+                            )}
+
                             <div>
                                 <label className="block text-sm font-semibold text-slate-800 mb-2">
-                                    Related Task
+                                    Reason for blocker
                                 </label>
-                                <ModernSelect
-                                    value={task}
-                                    options={TASK_OPTIONS}
-                                    onChange={setTask}
-                                    placeholder="Select a task"
-                                    icon={ClipboardList}
+                                <textarea
+                                    value={reason}
+                                    onChange={(e) => setReason(e.target.value)}
+                                    placeholder="Explain why this task is blocked..."
+                                    rows={4}
+                                    disabled={saving}
+                                    className="w-full border border-slate-300 rounded-lg p-3 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y disabled:bg-slate-50 disabled:text-slate-400"
                                 />
                             </div>
 
                             <div>
                                 <label className="block text-sm font-semibold text-slate-800 mb-2">
-                                    Description
+                                    Assign to
                                 </label>
-                                <textarea
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                    placeholder="Describe what's blocking your progress..."
-                                    rows={4}
-                                    className="w-full border border-slate-300 rounded-lg p-3 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 resize-y"
+                                <ModernSelect
+                                    value={assigneeId}
+                                    options={memberOptions}
+                                    onChange={setAssigneeId}
+                                    loading={membersLoading}
+                                    placeholder="Select a department member"
                                 />
                             </div>
 
                             <div className="flex gap-3 mt-1">
                                 <button
-                                    onClick={handleReport}
-                                    className="flex-1 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-semibold text-sm rounded-lg px-5 py-2.5 transition-colors duration-150"
+                                    onClick={handleSaveReason}
+                                    disabled={saving}
+                                    className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:bg-indigo-400 text-white font-semibold text-sm rounded-lg px-5 py-2.5 transition-colors duration-150 cursor-pointer"
                                 >
-                                    Report Blocker
+                                    {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                                    {saving ? "Saving..." : "Save Changes"}
                                 </button>
                                 <button
-                                    onClick={() => setShowForm(false)}
-                                    className="px-6 py-2.5 rounded-lg text-sm font-semibold text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors duration-150"
+                                    onClick={closeEditModal}
+                                    disabled={saving}
+                                    className="px-6 py-2.5 rounded-lg text-sm font-semibold text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer"
                                 >
                                     Cancel
                                 </button>

@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LayoutGrid, CheckSquare, KanbanSquare, MessageSquare, AlertCircle, LogOut, X, Menu, ChevronDown, GitBranch } from 'lucide-react';
-
-// isOpen and onToggle are controlled by the parent layout so the
-// content area can react when the sidebar opens or closes.
-// onLogout is called only after the user confirms via the Yes/No prompt.
 const UserSidebar = ({ isOpen, onToggle, onLogout }) => {
     const location = useLocation();
     const navigate = useNavigate();

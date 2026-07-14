@@ -95,6 +95,32 @@ const userapiservicer = {
         const response = await axiosInstance.get('/user/scrum', { params });
         return response.data;
     },
+
+    getBlockedTasks: async (params = {}) => {
+        const response = await axiosInstance.get('/user/blocked-tasks', { params });
+        return response.data;
+    },
+   updateBlockerReason: async (id, payload) => {
+        const response = await axiosInstance.put(`/user/blocked-tasks/reason/${id}`, payload);
+        return response.data;
+    },
+    
+    getMyBlockers: async () => {
+        const response = await axiosInstance.get('/user/my-blockers');
+        return response.data;
+    },
+
+    getMyDepartmentMembers: async () => {
+        const response = await axiosInstance.get('/user/my-department-members');
+        return response.data;
+    },
+    // Profile
+    getMyProfile: async () => {
+        const response = await axiosInstance.get('/auth/profile');
+        return response.data;
+    },
+
+
 };
 
 export default userapiservicer;

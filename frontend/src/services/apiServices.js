@@ -90,6 +90,11 @@ const apiServices = {
     return response.data;
   },
 
+  getAdminBlockedTasks: async (params = {}) => {
+    const response = await axiosInstance.get('/admin/blocked-tasks', { params });
+    return response.data;
+  },
+
   createTask: async (taskData) => {
     const response = await axiosInstance.post('/tasks', taskData);
     return response.data;

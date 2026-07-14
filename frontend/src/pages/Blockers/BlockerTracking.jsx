@@ -1,118 +1,100 @@
-import React, { useState } from 'react';
-import { AlertCircle, CheckCircle2, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { AlertCircle, CheckCircle2, Check, Loader2 } from 'lucide-react';
+import apiServices from '../../services/apiServices';
 
 const BlockerTracking = () => {
-  const [openBlockers, setOpenBlockers] = useState([
-    {
-      id: 1,
-      title: 'Missing database credentials for production migration',
-      task: 'Database migration',
-      reporter: 'Priya Patel',
-      date: 'Apr 9, 2026'
-    },
-    {
-      id: 2,
-      title: 'Apple Developer account approval pending',
-      task: 'Push notification service',
-      reporter: 'James Kim',
-      date: 'Apr 8, 2026'
-    }
-  ]);
+  const [openBlockers, setOpenBlockers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [resolvedBlockers, setResolvedBlockers] = useState([]);
+  useEffect(() => {
+    fetchBlockers();
+  }, []);
 
-  const handleResolve = (id) => {
-    const blocker = openBlockers.find(b => b.id === id);
-    if (blocker) {
-      setOpenBlockers(openBlockers.filter(b => b.id !== id));
-      
-      // Get today's date in a nice format (e.g. Apr 10, 2026)
-      const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      
-      setResolvedBlockers([{ ...blocker, resolvedDate: today }, ...resolvedBlockers]);
+  const fetchBlockers = async () => {
+    try {
+      setIsLoading(true);
+      const data = await apiServices.getAdminBlockedTasks();
+      setOpenBlockers(data);
+    } catch (error) {
+      console.error("Failed to fetch blocked tasks:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="p-8 w-full h-full flex flex-col animate-in fade-in duration-300">
+    <div className="p-4 sm:p-6 lg:p-8 w-full h-full flex flex-col animate-in fade-in duration-300">
       <div className="mb-8 shrink-0">
         <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Blocker Tracking</h1>
-        <p className="text-slate-500 mt-1">Monitor and resolve team blockers</p>
+        <p className="text-slate-500 mt-1">Monitor open team blockers</p>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* Open Blockers */}
-        <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm flex flex-col">
-          <div className="flex items-center space-x-3 mb-8 bg-rose-50 border border-rose-100 p-3 rounded-lg w-fit">
-            <AlertCircle className="w-5 h-5 text-rose-600" />
-            <h2 className="text-lg font-semibold text-rose-900">Open Blockers ({openBlockers.length})</h2>
-          </div>
-
-          <div className="space-y-4 flex-1 overflow-y-auto pr-2">
-            {openBlockers.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-slate-400">
-                All clear! No open blockers.
-              </div>
-            ) : (
-              openBlockers.map(blocker => (
-                <div key={blocker.id} className="bg-rose-50 border border-rose-100 p-5 rounded-lg flex justify-between items-start group hover:border-rose-200 transition-colors relative">
-                  <div>
-                    <h3 className="font-semibold text-rose-900 mb-3">{blocker.title}</h3>
-                    <div className="space-y-1 text-sm text-rose-700/80">
-                      <p>Task: {blocker.task}</p>
-                      <p>Reporter: {blocker.reporter}</p>
-                      <p>Reported: {blocker.date}</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => handleResolve(blocker.id)}
-                    className="text-emerald-500 hover:text-emerald-600 bg-white p-1.5 rounded-full shadow-sm hover:shadow transition-all border border-emerald-100 absolute top-4 right-4 cursor-pointer z-10"
-                    title="Mark as resolved"
-                  >
-                    <CheckCircle2 className="w-5 h-5" />
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
+      <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+        <div className="flex items-center space-x-3 border-b border-slate-200 p-6 bg-slate-50/50">
+          <AlertCircle className="w-5 h-5 text-rose-600" />
+          <h2 className="text-lg font-semibold text-slate-900">Active Blockers ({openBlockers.length})</h2>
         </div>
 
-        {/* Resolved Blockers */}
-        <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm flex flex-col">
-          <div className="flex items-center space-x-3 mb-8 bg-emerald-50 border border-emerald-100 p-3 rounded-lg w-fit">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            <h2 className="text-lg font-semibold text-emerald-900">Resolved ({resolvedBlockers.length})</h2>
-          </div>
-
-          <div className="flex-1 overflow-y-auto pr-2">
-            {resolvedBlockers.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-slate-400">
-                No resolved blockers yet
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {resolvedBlockers.map(blocker => (
-                  <div key={blocker.id} className="bg-slate-50 border border-slate-200 p-5 rounded-lg flex justify-between items-start relative opacity-80 transition-opacity hover:opacity-100">
-                    <div>
-                      <h3 className="font-semibold text-slate-700 mb-3">{blocker.title}</h3>
-                      <div className="space-y-1 text-sm text-slate-500">
-                        <p>Task: {blocker.task}</p>
-                        <p>Reporter: {blocker.reporter}</p>
-                        <p className="text-emerald-600 font-medium pt-1">Resolved: {blocker.resolvedDate}</p>
+        <div className="flex-1 overflow-x-auto">
+          {isLoading ? (
+            <div className="h-full flex items-center justify-center text-slate-400 min-h-[400px]">
+              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+              Loading blockers...
+            </div>
+          ) : openBlockers.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-slate-400 min-h-[400px]">
+              All clear! No open blockers.
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
+                  <th className="font-semibold py-4 px-6">Blocked User</th>
+                  <th className="font-semibold py-4 px-6">Priority</th>
+                  <th className="font-semibold py-4 px-6">Project</th>
+                  <th className="font-semibold py-4 px-6">Blocker Reason</th>
+                  <th className="font-semibold py-4 px-6">Depended On</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {openBlockers.map(blocker => (
+                  <tr key={blocker._id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-4 px-6 text-slate-900 font-medium">{blocker.assignee?.name || 'Unassigned'}</td>
+                    <td className="py-4 px-6">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
+                        blocker.priority === 'High' ? 'bg-rose-100 text-rose-700' :
+                        blocker.priority === 'Medium' ? 'bg-amber-100 text-amber-700' :
+                        'bg-emerald-100 text-emerald-700'
+                      }`}>
+                        {blocker.priority || 'Medium'}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-slate-600">{blocker.project?.projectName || 'N/A'}</td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                          <AlertCircle size={16} />
+                        </div>
+                        <span className="font-medium text-slate-900">
+                          {blocker.blockerReason}
+                        </span>
                       </div>
-                    </div>
-                    <div className="text-emerald-500 bg-emerald-50 p-1.5 rounded-full border border-emerald-100 absolute top-4 right-4">
-                      {/* Changed to a different tick icon as requested */}
-                      <Check className="w-5 h-5" strokeWidth={3} /> 
-                    </div>
-                  </div>
+                    </td>
+                    <td className="py-4 px-6 text-slate-600">
+                      {blocker.blockerAssignee ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                          {blocker.blockerAssignee.name}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 italic text-sm">Unassigned</span>
+                      )}
+                    </td>
+                  </tr>
                 ))}
-              </div>
-            )}
-          </div>
+              </tbody>
+            </table>
+          )}
         </div>
-
       </div>
     </div>
   );

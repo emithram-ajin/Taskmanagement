@@ -10,10 +10,11 @@ import {
   MessageSquare, 
   AlertCircle,
   LogOut,
-  FolderGit2
+  FolderGit2,
+  X
 } from 'lucide-react';
 
-const Sidebar = ({ onLogout }) => {
+const Sidebar = ({ onLogout, isOpen, onClose }) => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const confirmLogout = () => {
     setShowLogoutConfirm(false);
@@ -37,26 +38,50 @@ const Sidebar = ({ onLogout }) => {
 
   return (
     <>
-    <aside className="w-64 bg-slate-900 h-full text-slate-300 flex flex-col font-sans shrink-0">
-      <div className="p-6 border-b border-slate-800">
-        <h1 className="text-2xl font-semibold text-white tracking-tight">ProjectFlow</h1>
-        <p className="text-xs text-slate-500 mt-1">IT Team Manager</p>
-      </div>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 z-[60] md:hidden backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Sidebar Content */}
+      <aside className={`
+        fixed md:static inset-y-0 left-0 z-[70] w-64 bg-slate-900 h-full text-slate-300 flex flex-col font-sans shrink-0
+        transform transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'}
+      `}>
+        <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-semibold text-white tracking-tight">ProjectFlow</h1>
+            <p className="text-xs text-slate-500 mt-1">IT Team Manager</p>
+          </div>
+          <button onClick={onClose} className="md:hidden text-slate-400 hover:text-white p-1">
+            <X size={24} />
+          </button>
+        </div>
 
       <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
         {navItems.map((item, index) => {
           const isActive = location.pathname === item.path;
-          return (
-            <Link
-              key={index}
-              to={item.path}
-              className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                isActive 
-                  ? 'bg-indigo-600 text-white' 
-                  : 'hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
+            return (
+              <Link
+                key={item.label}
+                to={item.path}
+                onClick={() => {
+                  if (window.innerWidth < 768) {
+                    onClose?.();
+                  }
+                }}
+                className={`
+                  flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 group
+                  ${isActive 
+                    ? 'bg-indigo-500/10 text-indigo-400' 
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                  }
+                `}
+              ><item.icon className="w-5 h-5" />
               <span>{item.label}</span>
             </Link>
           );

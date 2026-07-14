@@ -3,7 +3,7 @@ import Login from './pages/Auth/Login';
 import AdminLayout from './layouts/AdminLayout';
 import UserLayout from './layouts/UserLayout';
 import AppRoutes from './routes/AppRoutes';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useNavigate } from 'react-router-dom';
 
 import UserDashboard from './pages/Dashboard/UserDashboard';
 
@@ -14,6 +14,7 @@ import BlockerTracking from './pages/Report-User/BlockerTracking';
 import Dependencies from './pages/Task Details-User/Dependencies';
 
 function App() {
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
 
@@ -37,6 +38,7 @@ function App() {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     setCurrentUser(null);
+    navigate('/');
   };
 
   if (isInitializing) return null;

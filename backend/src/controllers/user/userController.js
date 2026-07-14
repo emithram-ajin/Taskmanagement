@@ -60,6 +60,63 @@ export const getMyTasks = async (req, res) => {
   }
 };
 
+export const getBlockedTasks = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const blockedTasks = await Task.find({
+      assignee: userId,
+      status: "blocker", 
+    })
+      .populate("project", "projectName status")
+      .populate("assignee", "name email department")
+      .populate("createdBy", "name email")
+      .sort({ deadline: 1 });
+
+    res.status(200).json(blockedTasks);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const updateBlockerReason = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { blockerReason } = req.body;
+
+    if (!blockerReason || !blockerReason.trim()) {
+      return res.status(400).json({
+        message: "Blocker reason is required.",
+      });
+    }
+
+    const task = await Task.findById(id);
+
+    if (!task) {
+      return res.status(404).json({
+        message: "Task not found.",
+      });
+    }
+
+    if (task.assignee.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        message: "Unauthorized.",
+      });
+    }
+
+    task.blockerReason = blockerReason;
+    await task.save();
+
+    res.status(200).json({
+      message: "Blocker reason updated successfully.",
+      task,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
 
 export const postDependency = async (req, res) => {
   try {

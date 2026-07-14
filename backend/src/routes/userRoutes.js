@@ -8,6 +8,8 @@ import {
   updateDependency,
   getUserProjects,
   updateTaskStatus,
+  getBlockedTasks,
+  updateBlockerReason,
 } from "../controllers/user/userController.js";
 import {
   createScrum,
@@ -26,6 +28,8 @@ router.get("/projects", protect, getUserProjects);
 // ── Task routes ────────────────────────────────────────────
 router.get("/my-tasks", protect, getMyTasks);
 router.patch("/my-tasks/status/:id", protect, updateTaskStatus);
+router.get("/blocked-tasks", protect, getBlockedTasks);
+router.put("/blocked-tasks/reason/:id", protect, updateBlockerReason);
 
 // ── Dependency routes ──────────────────────────────────────
 router.post("/dependency",     protect, postDependency);

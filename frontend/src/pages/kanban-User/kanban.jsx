@@ -2,46 +2,51 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Flag, CalendarDays, User, ChevronDown, AlertTriangle, Loader2 } from "lucide-react";
 import userapiservicer from "../../services/userapiServices";
 
+// Order here drives the left-to-right column order on the board.
 const COLUMNS = [
     {
         key: "todo",
         label: "TO DO",
-        headerColor: "text-slate-600",
+        headerColor: "text-slate-700",
         colBorder: "border border-slate-200",
         bgColor: "bg-white",
         badgeBg: "bg-slate-100",
         badgeText: "text-slate-600",
         dropHighlight: "bg-slate-50",
-    },
-    {
-        key: "blocker",
-        label: "BLOCKER",
-        headerColor: "text-rose-600",
-        colBorder: "border-2 border-rose-300",
-        bgColor: "bg-rose-50/40",
-        badgeBg: "bg-rose-500",
-        badgeText: "text-white",
-        dropHighlight: "bg-rose-50",
+        emptyBorder: "border-slate-300",
     },
     {
         key: "in-progress",
         label: "IN PROGRESS",
         headerColor: "text-indigo-600",
-        colBorder: "border-2 border-indigo-300",
-        bgColor: "bg-indigo-50/40",
-        badgeBg: "bg-indigo-500",
-        badgeText: "text-white",
+        colBorder: "border border-indigo-200",
+        bgColor: "bg-indigo-50/30",
+        badgeBg: "bg-indigo-100",
+        badgeText: "text-indigo-700",
         dropHighlight: "bg-indigo-50",
+        emptyBorder: "border-indigo-200",
+    },
+    {
+        key: "blocker",
+        label: "BLOCKER",
+        headerColor: "text-rose-600",
+        colBorder: "border border-rose-200",
+        bgColor: "bg-rose-50/30",
+        badgeBg: "bg-rose-100",
+        badgeText: "text-rose-700",
+        dropHighlight: "bg-rose-50",
+        emptyBorder: "border-rose-200",
     },
     {
         key: "completed",
         label: "COMPLETED",
         headerColor: "text-emerald-600",
-        colBorder: "border-2 border-emerald-300",
-        bgColor: "bg-emerald-50/40",
-        badgeBg: "bg-emerald-500",
-        badgeText: "text-white",
+        colBorder: "border border-emerald-200",
+        bgColor: "bg-emerald-50/30",
+        badgeBg: "bg-emerald-100",
+        badgeText: "text-emerald-700",
         dropHighlight: "bg-emerald-50",
+        emptyBorder: "border-emerald-200",
     },
 ];
 
@@ -94,20 +99,20 @@ const ANIMATION_STYLES = `
 .tb-empty-in {
     animation: taskboard-fade-in 0.3s ease-out both;
 }
-.tb-scroll-row {
+.tb-scroll-col {
     scroll-behavior: smooth;
 }
-.tb-scroll-row::-webkit-scrollbar {
-    height: 8px;
+.tb-scroll-col::-webkit-scrollbar {
+    width: 6px;
 }
-.tb-scroll-row::-webkit-scrollbar-track {
+.tb-scroll-col::-webkit-scrollbar-track {
     background: transparent;
 }
-.tb-scroll-row::-webkit-scrollbar-thumb {
+.tb-scroll-col::-webkit-scrollbar-thumb {
     background-color: rgba(100, 116, 139, 0.3);
     border-radius: 9999px;
 }
-.tb-scroll-row::-webkit-scrollbar-thumb:hover {
+.tb-scroll-col::-webkit-scrollbar-thumb:hover {
     background-color: rgba(100, 116, 139, 0.5);
 }
 `;
@@ -120,13 +125,6 @@ function formatShortDate(dateInput) {
     return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 }
 
-// Converts a raw task from GET /user/my-tasks into the flat shape the board's
-// columns/cards expect (mirrors TaskDetails' normalizeTask, adapted for the
-// kanban view: status becomes a column key, priority is lowercased, and
-// dates are shortened for the card).
-// Normalizes a raw task from GET /user/my-tasks into the flat shape the
-// board's cards/columns expect. Keeps the raw deadline around too, in case
-// you need it for sorting/filtering later.
 // Normalizes a raw task from GET /user/my-tasks into the flat shape the
 // board's cards/columns expect.
 function normalizeTask(task) {
@@ -260,7 +258,7 @@ function TaskCard({ task, onDragStart, style }) {
             </div>
 
             {/* Project tag */}
-            <div className=" ">
+            <div>
                 <span className="text-[13px] font-normal text-gray-600">
                     {task.project}
                 </span>
@@ -441,8 +439,9 @@ export default function TaskBoard() {
                     Loading tasks...
                 </div>
             ) : (
-                /* Kanban Columns */
-                <div className="tb-scroll-row flex gap-5 pb-6 items-stretch overflow-x-auto">
+                /* Kanban Columns — equal-width grid, fills the container width instead of scrolling horizontally */
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 items-stretch">
+
                     {COLUMNS.map((col, colIndex) => {
                         const colTasks = visibleTasks
                             .filter((t) => t.status === col.key)
@@ -457,7 +456,7 @@ export default function TaskBoard() {
                                 onDragLeave={() => setDragOverCol(null)}
                                 onDrop={() => handleDrop(col.key)}
                                 style={{ animationDelay: `${colIndex * 80}ms` }}
-                                className={`tb-column-in flex flex-col rounded-xl w-[480px] shrink-0 ${col.colBorder} ${isOver ? col.dropHighlight : col.bgColor} transition-colors duration-200`}
+                                className={`tb-column-in flex flex-col rounded-xl w-full h-full ${col.colBorder} ${isOver ? col.dropHighlight : col.bgColor} transition-colors duration-200`}
                             >
                                 {/* Column Header */}
                                 <div className="px-5 pt-5 pb-4 flex items-center justify-between shrink-0">
@@ -467,14 +466,14 @@ export default function TaskBoard() {
                                     </span>
                                     <span
                                         key={colTasks.length}
-                                        className={`min-w-[22px] h-[22px] px-1.5 flex items-center justify-center rounded-full text-[11px] font-bold ${col.badgeBg} ${col.badgeText} ${poppedCol === col.key ? "tb-badge-pop" : ""}`}
+                                        className={`min-w-[26px] h-[26px] px-1.5 flex items-center justify-center rounded-full text-[12px] font-bold ${col.badgeBg} ${col.badgeText} ${poppedCol === col.key ? "tb-badge-pop" : ""}`}
                                     >
                                         {colTasks.length}
                                     </span>
                                 </div>
 
                                 {/* Cards */}
-                                <div className="px-4 pb-5 flex flex-col gap-3 flex-1">
+                                <div className="tb-scroll-col px-4 pb-5 flex flex-col gap-3 flex-1 max-h-[calc(100vh-260px)] overflow-y-auto">
                                     {colTasks.map((task, i) => (
                                         <div key={task.id} data-task-id={task.id}>
                                             <TaskCard
@@ -485,19 +484,11 @@ export default function TaskBoard() {
                                         </div>
                                     ))}
 
-                                    {colTasks.length === 0 && col.key === "blocker" && (
-                                        <div className="tb-empty-in bg-white rounded-xl border border-dashed border-rose-200 p-4 w-full h-38 flex flex-col items-center justify-center text-center gap-1.5">
-                                            <div className="w-9 h-9 rounded-full bg-rose-50 flex items-center justify-center">
-                                                <AlertTriangle className="w-4 h-4 text-rose-300" />
-                                            </div>
-                                            <p className="text-[13px] font-semibold text-slate-500">No reported blockers</p>
-                                            <p className="text-[12px] text-slate-400">Everything's running smoothly</p>
-                                        </div>
-                                    )}
-
-                                    {colTasks.length === 0 && col.key !== "blocker" && (
-                                        <div className="tb-empty-in flex-1 flex items-center justify-center text-slate-400 text-sm">
-                                            No tasks
+                                    {colTasks.length === 0 && (
+                                        <div
+                                            className={`tb-empty-in rounded-xl border-2 border-dashed ${col.emptyBorder} flex-1 min-h-[110px] flex items-center justify-center text-center`}
+                                        >
+                                            <p className="text-[14px] font-medium text-slate-400">Drop tasks here</p>
                                         </div>
                                     )}
                                 </div>

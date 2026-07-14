@@ -95,7 +95,23 @@ function ModernSelect({ value, options, onChange, loading, placeholder = "Select
     );
 }
 
+// Small pill used for names in the table (assignee / blocker-assignee / task owner)
+function NamePill({ name, tone = "indigo" }) {
+    const tones = {
+        indigo: "bg-indigo-100 text-indigo-700",
+        slate: "bg-slate-100 text-slate-500",
+    };
+    return (
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${tones[tone]}`}>
+            {name}
+        </span>
+    );
+}
+
 export default function BlockerTracking() {
+    // Which table is active: "blockers" (default) or "mine"
+    const [activeTab, setActiveTab] = useState("blockers");
+
     const [blockedTasks, setBlockedTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -232,128 +248,199 @@ export default function BlockerTracking() {
         }
     };
 
+    const tabs = [
+        { key: "blockers", label: "Blockers", icon: AlertCircle, count: blockedTasks.length, loading, error },
+        { key: "mine", label: "My Blockers", icon: ShieldAlert, count: myBlockers.length, loading: myBlockersLoading, error: myBlockersError },
+    ];
+
     return (
         <div className="min-h-screen bg-slate-50 px-8 py-6">
             {/* Page Header */}
             <div className="mb-6">
                 <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">Blocker Tracking</h1>
-                <p className="text-slate-700 text-[16px] mt-1">Tasks currently blocked and assigned to you</p>
+                <p className="text-slate-700 text-[16px] mt-1">Monitor open team blockers</p>
             </div>
 
-            {/* Columns */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
-                {/* Open Blockers */}
-                <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col h-full min-h-[260px]">
-                    <div className="flex items-center gap-3 mb-5">
-                        <div className="w-9 h-9 shrink-0 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
-                            <AlertCircle className="w-5 h-5" />
-                        </div>
-                        <h2 className="text-[20px] font-semibold text-slate-900">
-                            Open Blockers {!loading && !error && `(${blockedTasks.length})`}
-                        </h2>
-                    </div>
-
-                    {loading ? (
-                        <div className="flex items-center gap-2 text-slate-400 text-sm py-6">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Loading blocked tasks...
-                        </div>
-                    ) : error ? (
-                        <p className="text-rose-500 text-sm py-4">{error}</p>
-                    ) : (
-                        <div className="flex flex-col gap-3">
-                            {blockedTasks.map((task) => (
-                                <div
-                                    key={task.id}
-                                    className="bg-rose-50 border border-rose-100 rounded-lg p-4"
+            {/* Tab Switcher */}
+            <div className="flex items-center gap-2 mb-5 border-b border-slate-200">
+                {tabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.key;
+                    return (
+                        <button
+                            key={tab.key}
+                            onClick={() => setActiveTab(tab.key)}
+                            className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors duration-150 cursor-pointer ${
+                                isActive
+                                    ? "border-indigo-600 text-indigo-700"
+                                    : "border-transparent text-slate-500 hover:text-slate-700"
+                            }`}
+                        >
+                            <Icon className="w-4 h-4" />
+                            {tab.label}
+                            {!tab.loading && !tab.error && (
+                                <span
+                                    className={`ml-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+                                        isActive ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-500"
+                                    }`}
                                 >
-                                    <div className="flex items-start justify-between gap-2 mb-2">
-                                        <p className="text-[15px] font-semibold text-rose-900 leading-snug">
-                                            {task.title}
-                                        </p>
-                                        <button
-                                            onClick={() => openEditModal(task)}
-                                            title="Edit blocker"
-                                            className="shrink-0 w-7 h-7 flex items-center justify-center rounded-md bg-white border border-rose-200 text-rose-600 hover:bg-rose-100 transition-colors duration-150 cursor-pointer"
-                                        >
-                                            <Pencil className="w-3.5 h-3.5" />
-                                        </button>
-                                    </div>
-                                    {task.description && (
-                                        <p className="text-[13px] text-rose-700 mb-2">{task.description}</p>
-                                    )}
-                                    <p className="text-[14px] text-rose-700">Project: {task.project}</p>
-                                    <p className="text-[14px] text-rose-700">Assignee: {task.assignee}</p>
-                                    <p className="text-[14px] text-rose-700">Deadline: {formatDate(task.deadline)}</p>
-                                    <p className="text-[14px] text-rose-700">Assigned by: {task.createdBy}</p>
-                                    {task.blockerReason && (
-                                        <p className="text-[14px] text-rose-700 mt-1">
-                                            <span className="font-semibold">Reason:</span> {task.blockerReason}
-                                        </p>
-                                    )}
-                                    {task.blockerAssigneeName && (
-                                        <p className="text-[14px] text-rose-700">
-                                            <span className="font-semibold">Blocker assigned to:</span> {task.blockerAssigneeName}
-                                        </p>
-                                    )}
-                                </div>
-                            ))}
-
-                            {blockedTasks.length === 0 && (
-                                <p className="text-slate-400 text-sm">No open blockers 🎉</p>
+                                    {tab.count}
+                                </span>
                             )}
-                        </div>
-                    )}
-                </div>
+                        </button>
+                    );
+                })}
+            </div>
 
-                {/* My Blockers — tasks where someone assigned ME to resolve their blocker */}
-                <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col h-full min-h-[260px]">
-                    <div className="flex items-center gap-3 mb-5">
-                        <div className="w-9 h-9 shrink-0 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                            <ShieldAlert className="w-5 h-5" />
+            {/* Table Card */}
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                {activeTab === "blockers" && (
+                    <>
+                        <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
+                            <div className="w-9 h-9 shrink-0 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+                                <AlertCircle className="w-5 h-5" />
+                            </div>
+                            <h2 className="text-[20px] font-semibold text-slate-900">
+                                Active Blockers {!loading && !error && `(${blockedTasks.length})`}
+                            </h2>
                         </div>
-                        <h2 className="text-[20px] font-semibold text-slate-900">
-                            My Blockers {!myBlockersLoading && !myBlockersError && `(${myBlockers.length})`}
-                        </h2>
-                    </div>
 
-                    {myBlockersLoading ? (
-                        <div className="flex items-center gap-2 text-slate-400 text-sm py-6">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Loading your blockers...
-                        </div>
-                    ) : myBlockersError ? (
-                        <p className="text-rose-500 text-sm py-4">{myBlockersError}</p>
-                    ) : (
-                        <div className="flex flex-col gap-3">
-                            {myBlockers.map((task) => (
-                                <div
-                                    key={task.id}
-                                    className="bg-indigo-50 border border-indigo-100 rounded-lg p-4"
-                                >
-                                    <p className="text-[15px] font-semibold text-indigo-900 leading-snug mb-2">
-                                        {task.title}
-                                    </p>
-                                    {task.description && (
-                                        <p className="text-[13px] text-indigo-700 mb-2">{task.description}</p>
-                                    )}
-                                    <p className="text-[14px] text-indigo-700">Project: {task.project}</p>
-                                    <p className="text-[14px] text-indigo-700">Task owner: {task.assignee}</p>
-                                    <p className="text-[14px] text-indigo-700">Deadline: {formatDate(task.deadline)}</p>
-                                    {task.blockerReason && (
-                                        <p className="text-[14px] text-indigo-700 mt-1">
-                                            <span className="font-semibold">Reason:</span> {task.blockerReason}
-                                        </p>
-                                    )}
-                                </div>
-                            ))}
+                        {loading ? (
+                            <div className="flex items-center gap-2 text-slate-400 text-sm py-8 px-6">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Loading blocked tasks...
+                            </div>
+                        ) : error ? (
+                            <p className="text-rose-500 text-sm py-6 px-6">{error}</p>
+                        ) : blockedTasks.length === 0 ? (
+                            <p className="text-slate-400 text-sm py-8 px-6">No open blockers 🎉</p>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                            <th className="px-6 py-3">Task</th>
+                                            <th className="px-6 py-3">Project</th>
+                                            <th className="px-6 py-3">Assignee</th>
+                                            <th className="px-6 py-3">Deadline</th>
+                                            <th className="px-6 py-3">Blocker Reason</th>
+                                            <th className="px-6 py-3">Assigned To</th>
+                                            <th className="px-6 py-3"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {blockedTasks.map((task) => (
+                                            <tr key={task.id} className="hover:bg-slate-50/60 transition-colors duration-100">
+                                                <td className="px-6 py-4 align-top">
+                                                    <p className="text-sm font-semibold text-slate-900">{task.title}</p>
+                                                    {task.description && (
+                                                        <p className="text-xs text-slate-400 mt-0.5 max-w-xs truncate">{task.description}</p>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 align-top text-sm text-slate-600">{task.project}</td>
+                                                <td className="px-6 py-4 align-top">
+                                                    <NamePill name={task.assignee} tone="slate" />
+                                                </td>
+                                                <td className="px-6 py-4 align-top text-sm text-slate-600">{formatDate(task.deadline)}</td>
+                                                <td className="px-6 py-4 align-top">
+                                                    {task.blockerReason ? (
+                                                        <span className="inline-flex items-center gap-1.5 text-sm text-rose-700">
+                                                            <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                                                            {task.blockerReason}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-sm text-slate-300">—</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 align-top">
+                                                    {task.blockerAssigneeName ? (
+                                                        <NamePill name={task.blockerAssigneeName} tone="indigo" />
+                                                    ) : (
+                                                        <span className="text-sm italic text-slate-300">Unassigned</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 align-top text-right">
+                                                    <button
+                                                        onClick={() => openEditModal(task)}
+                                                        title="Edit blocker"
+                                                        className="w-7 h-7 inline-flex items-center justify-center rounded-md bg-white border border-slate-200 text-slate-500 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 transition-colors duration-150 cursor-pointer"
+                                                    >
+                                                        <Pencil className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </>
+                )}
 
-                            {myBlockers.length === 0 && (
-                                <p className="text-slate-400 text-md">No blockers assigned to you 🎉</p>
-                            )}
+                {activeTab === "mine" && (
+                    <>
+                        <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
+                            <div className="w-9 h-9 shrink-0 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                <ShieldAlert className="w-5 h-5" />
+                            </div>
+                            <h2 className="text-[20px] font-semibold text-slate-900">
+                                My Blockers {!myBlockersLoading && !myBlockersError && `(${myBlockers.length})`}
+                            </h2>
                         </div>
-                    )}
-                </div>
+
+                        {myBlockersLoading ? (
+                            <div className="flex items-center gap-2 text-slate-400 text-sm py-8 px-6">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Loading your blockers...
+                            </div>
+                        ) : myBlockersError ? (
+                            <p className="text-rose-500 text-sm py-6 px-6">{myBlockersError}</p>
+                        ) : myBlockers.length === 0 ? (
+                            <p className="text-slate-400 text-sm py-8 px-6">No blockers assigned to you 🎉</p>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                            <th className="px-6 py-3">Task</th>
+                                            <th className="px-6 py-3">Project</th>
+                                            <th className="px-6 py-3">Task Owner</th>
+                                            <th className="px-6 py-3">Deadline</th>
+                                            <th className="px-6 py-3">Blocker Reason</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {myBlockers.map((task) => (
+                                            <tr key={task.id} className="hover:bg-slate-50/60 transition-colors duration-100">
+                                                <td className="px-6 py-4 align-top">
+                                                    <p className="text-sm font-semibold text-slate-900">{task.title}</p>
+                                                    {task.description && (
+                                                        <p className="text-xs text-slate-400 mt-0.5 max-w-xs truncate">{task.description}</p>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 align-top text-sm text-slate-600">{task.project}</td>
+                                                <td className="px-6 py-4 align-top">
+                                                    <NamePill name={task.assignee} tone="slate" />
+                                                </td>
+                                                <td className="px-6 py-4 align-top text-sm text-slate-600">{formatDate(task.deadline)}</td>
+                                                <td className="px-6 py-4 align-top">
+                                                    {task.blockerReason ? (
+                                                        <span className="inline-flex items-center gap-1.5 text-sm text-indigo-700">
+                                                            <ShieldAlert className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                                                            {task.blockerReason}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-sm text-slate-300">—</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </>
+                )}
             </div>
 
             {/* Edit Blocker Modal — reason + assign-to only */}

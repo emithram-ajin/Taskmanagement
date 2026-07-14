@@ -15,6 +15,7 @@ const COLUMNS = [
         dropHighlight: "bg-slate-50",
         emptyBorder: "border-slate-300",
     },
+    
     {
         key: "in-progress",
         label: "IN PROGRESS",

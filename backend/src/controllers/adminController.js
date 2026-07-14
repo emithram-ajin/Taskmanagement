@@ -229,3 +229,32 @@ export const adminGetBlockedTasks = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 };
+
+export const adminResetTaskStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const task = await Task.findById(id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found." });
+    }
+
+    task.status = "assigned";
+    task.blockerReason = "";
+    task.blockerAssignee = null;
+    await task.save();
+
+    const updated = await Task.findById(id)
+      .populate("project", "projectName status")
+      .populate("assignee", "name email department")
+      .populate("blockerAssignee", "name email department")
+      .populate("createdBy", "name email");
+
+    return res.status(200).json({
+      message: "Task status changed to assigned successfully.",
+      task: updated,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};

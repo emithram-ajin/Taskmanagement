@@ -5,6 +5,8 @@ import apiServices from '../../services/apiServices';
 const BlockerTracking = () => {
   const [openBlockers, setOpenBlockers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [blockerToResolve, setBlockerToResolve] = useState(null);
+  const [isResolving, setIsResolving] = useState(false);
 
   useEffect(() => {
     fetchBlockers();
@@ -54,6 +56,7 @@ const BlockerTracking = () => {
                   <th className="font-semibold py-4 px-6">Project</th>
                   <th className="font-semibold py-4 px-6">Blocker Reason</th>
                   <th className="font-semibold py-4 px-6">Depended On</th>
+                  <th className="font-semibold py-4 px-6 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -89,6 +92,15 @@ const BlockerTracking = () => {
                         <span className="text-slate-400 italic text-sm">Unassigned</span>
                       )}
                     </td>
+                    <td className="py-4 px-6 text-right">
+                      <button 
+                        onClick={() => setBlockerToResolve(blocker)}
+                        className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors inline-flex items-center"
+                        title="Reset/Resolve Blocker"
+                      >
+                        <CheckCircle2 className="w-5 h-5" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -96,6 +108,56 @@ const BlockerTracking = () => {
           )}
         </div>
       </div>
+
+      {/* Resolve Confirmation Modal */}
+      {blockerToResolve && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 mb-4 mx-auto">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 text-center mb-2">Resolve Blocker?</h3>
+            <p className="text-slate-500 text-center mb-6">
+              Are you sure you want to resolve the blocker on <span className="font-semibold text-slate-700">"{blockerToResolve.taskName || 'this task'}"</span>? This will reset its status to assigned and clear the blocker reason.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setBlockerToResolve(null)}
+                disabled={isResolving}
+                className="flex-1 px-4 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    setIsResolving(true);
+                    await apiServices.adminResetTaskStatus(blockerToResolve._id);
+                    setOpenBlockers(prev => prev.filter(b => b._id !== blockerToResolve._id));
+                    setBlockerToResolve(null);
+                  } catch (error) {
+                    console.error('Failed to reset task status', error);
+                    alert('Failed to reset task status. Please try again.');
+                  } finally {
+                    setIsResolving(false);
+                  }
+                }}
+                disabled={isResolving}
+                className="flex-1 px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                {isResolving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Resolving...
+                  </>
+                ) : (
+                  'Yes, Resolve It'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

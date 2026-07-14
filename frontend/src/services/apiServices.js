@@ -55,6 +55,19 @@ const apiServices = {
   },
 
   // -------------------------
+  // ADMIN SPECIFIC
+  // -------------------------
+  getAdminBlockedTasks: async () => {
+    const response = await axiosInstance.get('/admin/blocked-tasks');
+    return response.data;
+  },
+
+  adminResetTaskStatus: async (taskId) => {
+    const response = await axiosInstance.patch(`/admin/tasks/assign/${taskId}`);
+    return response.data;
+  },
+
+  // -------------------------
   // PROJECTS
   // -------------------------
   getProjects: async () => {

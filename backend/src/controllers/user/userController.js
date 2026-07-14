@@ -79,14 +79,20 @@ export const getBlockedTasks = async (req, res) => {
   }
 };
 
-export const updateBlockerReason = async (req, res) => {
+export const updateBlockerAssignee = async (req, res) => {
   try {
     const { id } = req.params;
-    const { blockerReason } = req.body;
+    const { blockerReason, blockerAssignee } = req.body;
 
     if (!blockerReason || !blockerReason.trim()) {
       return res.status(400).json({
         message: "Blocker reason is required.",
+      });
+    }
+
+    if (!blockerAssignee) {
+      return res.status(400).json({
+        message: "Blocker assignee (user ID) is required.",
       });
     }
 
@@ -100,21 +106,49 @@ export const updateBlockerReason = async (req, res) => {
 
     if (task.assignee.toString() !== req.user._id.toString()) {
       return res.status(403).json({
-        message: "Unauthorized.",
+        message: "Unauthorized. Only the task assignee can set a blocker.",
       });
     }
 
     task.blockerReason = blockerReason;
+    task.blockerAssignee = blockerAssignee;
     await task.save();
 
+    const updated = await Task.findById(id)
+      .populate("project", "projectName status")
+      .populate("assignee", "name email department")
+      .populate("blockerAssignee", "name email department")
+      .populate("createdBy", "name email");
+
     res.status(200).json({
-      message: "Blocker reason updated successfully.",
-      task,
+      message: "Blocker assignee updated successfully.",
+      task: updated,
     });
   } catch (err) {
     res.status(500).json({
       message: err.message,
     });
+  }
+};
+
+
+export const getMyBlockers = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const blockers = await Task.find({
+      blockerAssignee: userId,
+      status: "blocker",
+    })
+      .populate("project", "projectName status")
+      .populate("assignee", "name email department")
+      .populate("blockerAssignee", "name email department")
+      .populate("createdBy", "name email")
+      .sort({ deadline: 1 });
+
+    res.status(200).json(blockers);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 

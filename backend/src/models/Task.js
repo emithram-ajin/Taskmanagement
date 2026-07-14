@@ -8,6 +8,7 @@ const taskSchema = new mongoose.Schema({
   priority: { type: String, enum: ["High", "Medium", "Low"], default: "Medium" },
   status: { type: String, enum: ["assigned", "blocker", "progress", "completed"], default: "assigned" },
   blockerReason: { type: String, default: "" },
+  blockerAssignee: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   deadline: { type: Date, required: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 }, { timestamps: true });

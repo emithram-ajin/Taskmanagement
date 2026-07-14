@@ -208,3 +208,24 @@ export const adminGetScrumById = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 };
+
+export const adminGetBlockedTasks = async (req, res) => {
+  try {
+    const query = { status: "blocker" };
+    const { project, assignee } = req.query;
+
+    if (project) query.project = project;
+    if (assignee) query.assignee = assignee;
+
+    const blockedTasks = await Task.find(query)
+      .populate("project", "projectName status")
+      .populate("assignee", "name email department")
+      .populate("blockerAssignee", "name email department")
+      .populate("createdBy", "name email")
+      .sort({ updatedAt: -1 });
+
+    return res.status(200).json(blockedTasks);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};

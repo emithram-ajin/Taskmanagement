@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import User from "../../models/User.js";
 import Task from "../../models/Task.js";
 import ProjectDependency from "../../models/ProjectDependency.js";
 import Team from "../../models/Team.js";
@@ -147,6 +148,19 @@ export const getMyBlockers = async (req, res) => {
       .sort({ deadline: 1 });
 
     res.status(200).json(blockers);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const getMyDepartmentMembers = async (req, res) => {
+  try {
+    const department = req.user.department;
+    if (!department) {
+      return res.status(400).json({ message: "User does not belong to any department." });
+    }
+    const members = await User.find({ department }).select("_id name email department");
+    res.status(200).json(members);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

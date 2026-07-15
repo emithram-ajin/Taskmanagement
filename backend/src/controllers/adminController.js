@@ -258,3 +258,27 @@ export const adminResetTaskStatus = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 };
+
+// PUT /api/admin/change-password/:userId - Change user's password (admin only)
+export const adminChangeUserPassword = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { password } = req.body;
+
+    if (!password || password.trim().length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters long." });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    user.password = password;
+    await user.save();
+
+    return res.status(200).json({ message: "User password updated successfully." });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};

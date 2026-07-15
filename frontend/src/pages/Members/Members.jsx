@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Users, Pencil, Trash2, Mail, UserPlus, Shield, Eye, EyeOff } from "lucide-react";
+import { Users, Pencil, Trash2, Mail, UserPlus, Shield, Eye, EyeOff, KeyRound } from "lucide-react";
 import Modal from "../../components/Modal/Modal";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
 import Loader from "../../components/Loader/Loader";
@@ -137,9 +137,79 @@ const CreateMemberModal = ({
   );
 };
 
+const ChangePasswordModal = ({
+  isOpen,
+  onClose,
+  onSave,
+  userName,
+}) => {
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    await onSave(password);
+    setIsSubmitting(false);
+    setPassword("");
+    setShowPassword(false);
+    onClose();
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={`Change Password for ${userName}`}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            New Password
+          </label>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+              className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">Must be at least 6 characters long.</p>
+        </div>
+
+        <div className="flex space-x-3 pt-4">
+          <button
+            type="submit"
+            disabled={isSubmitting || password.length < 6}
+            className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            {isSubmitting ? "Saving..." : "Save Password"}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
 const Members = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
+  const [passwordModal, setPasswordModal] = useState({ isOpen: false, userId: null, userName: "" });
   const [departments] = useState(["HR", "IT", "Sales", "Marketing"]);
   const [filterDepartment, setFilterDepartment] = useState("");
 
@@ -192,6 +262,16 @@ const Members = () => {
     } catch (error) {
       console.error("Error deleting member:", error);
       alert("Failed to delete member.");
+    }
+  };
+
+  const handleChangePassword = async (newPassword) => {
+    try {
+      await apiServices.adminChangeUserPassword(passwordModal.userId, newPassword);
+      alert(`Password for ${passwordModal.userName} changed successfully.`);
+    } catch (error) {
+      console.error("Error changing password:", error);
+      alert(error.response?.data?.message || "Failed to change password.");
     }
   };
 
@@ -304,12 +384,20 @@ const Members = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
+                        <button 
+                          onClick={() => setPasswordModal({ isOpen: true, userId: member.id, userName: member.name })}
+                          className="text-slate-400 hover:text-emerald-600 p-1 rounded transition-colors"
+                          title="Change Password"
+                        >
+                          <KeyRound className="w-4 h-4" />
+                        </button>
                         <button className="text-slate-400 hover:text-indigo-600 p-1 rounded transition-colors">
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button 
                           onClick={() => setDeleteConfirm({ isOpen: true, id: member.id })}
                           className="text-slate-400 hover:text-rose-600 p-1 rounded transition-colors"
+                          title="Delete Member"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -328,6 +416,12 @@ const Members = () => {
         onClose={() => setIsModalOpen(false)}
         onSave={handleAddMember}
         departments={departments}
+      />
+      <ChangePasswordModal
+        isOpen={passwordModal.isOpen}
+        onClose={() => setPasswordModal({ isOpen: false, userId: null, userName: "" })}
+        onSave={handleChangePassword}
+        userName={passwordModal.userName}
       />
       <ConfirmModal
         isOpen={deleteConfirm.isOpen}

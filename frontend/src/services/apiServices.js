@@ -141,6 +141,11 @@ const apiServices = {
   adminLoginAs: async (userId) => {
     const response = await axiosInstance.post(`/admin/login-as/${userId}`);
     return response.data;
+  },
+
+  adminChangeUserPassword: async (userId, newPassword) => {
+    const response = await axiosInstance.put(`/admin/change-password/${userId}`, { password: newPassword });
+    return response.data;
   }
 };
 

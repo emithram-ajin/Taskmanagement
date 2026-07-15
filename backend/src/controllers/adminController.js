@@ -282,3 +282,52 @@ export const adminChangeUserPassword = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 };
+
+// PUT /api/admin/edit-user/:userId - Edit user details (admin only)
+export const adminEditUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { name, email, role, department } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (name) user.name = name;
+    if (email) {
+      // Check if email already exists for another user
+      const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email is already in use by another user." });
+      }
+      user.email = email;
+    }
+    if (role) {
+      const VALID_ROLES = ["superadmin", "admin", "member"];
+      if (!VALID_ROLES.includes(role)) {
+        return res.status(400).json({ message: "Invalid role specified." });
+      }
+      user.role = role;
+    }
+    if (department !== undefined) {
+      const VALID_DEPARTMENTS = ["HR", "IT", "Sales", "Marketing", null, ""];
+      if (department && !VALID_DEPARTMENTS.includes(department)) {
+        return res.status(400).json({ message: "Invalid department specified." });
+      }
+      user.department = department || undefined;
+    }
+
+    await user.save();
+
+    // Return the updated user (excluding password)
+    const updatedUser = await User.findById(userId).select("-password");
+
+    return res.status(200).json({
+      message: "User updated successfully.",
+      user: updatedUser,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};

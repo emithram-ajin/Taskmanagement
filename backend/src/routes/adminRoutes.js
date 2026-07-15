@@ -2,7 +2,7 @@ import express from "express";
 import {getAllMembers} from "../controllers/authController.js";
 import { createTeam, getTeams, addMemberToTeam, updateTeam, deleteTeam } from "../controllers/teamController.js";
 import { adminGetDependencies, adminGetDependencyById, getDashboardStats, adminLoginAs } from "../controllers/adminController.js";
-import { adminGetScrums, adminGetScrumById, adminGetBlockedTasks, adminResetTaskStatus, adminChangeUserPassword } from "../controllers/adminController.js";
+import { adminGetScrums, adminGetScrumById, adminGetBlockedTasks, adminResetTaskStatus, adminChangeUserPassword, adminEditUser } from "../controllers/adminController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { authorizeRoles } from "../middleware/rbacMiddleware.js";
 
@@ -14,6 +14,7 @@ router.post("/login-as/:userId", protect, authorizeRoles("superadmin", "admin"),
 router.get("/blocked-tasks", protect, authorizeRoles("superadmin", "admin"), adminGetBlockedTasks);
 router.patch("/tasks/assign/:id", protect, authorizeRoles("superadmin", "admin"), adminResetTaskStatus);
 router.put("/change-password/:userId", protect, authorizeRoles("superadmin", "admin"), adminChangeUserPassword);
+router.put("/edit-user/:userId", protect, authorizeRoles("superadmin", "admin"), adminEditUser);
 
 router.get("/members", protect, authorizeRoles("superadmin", "admin"), getAllMembers);
 

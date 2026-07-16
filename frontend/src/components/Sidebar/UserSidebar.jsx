@@ -1,11 +1,33 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LayoutGrid, CheckSquare, KanbanSquare, MessageSquare, AlertCircle, LogOut, X, Menu, ChevronDown, GitBranch } from 'lucide-react';
+import { ShieldCheck, ArrowLeft } from 'lucide-react';
+
 const UserSidebar = ({ isOpen, onToggle, onLogout }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const [expandedItem, setExpandedItem] = useState(null);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+    // Detect if an admin is currently impersonating this user
+    const [adminSession, setAdminSession] = useState(() => {
+        try {
+            const raw = localStorage.getItem('adminSession');
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    });
+
+    // Restore admin session and redirect back to admin dashboard
+    const handleBackToAdmin = () => {
+        if (!adminSession) return;
+        localStorage.setItem('user', adminSession.user);
+        localStorage.setItem('token', adminSession.token);
+        localStorage.setItem('role', adminSession.role);
+        localStorage.removeItem('adminSession');
+        window.location.href = '/';
+    };
 
     const navItems = [
         { label: 'My Tasks', icon: LayoutGrid, path: '/' },
@@ -67,8 +89,8 @@ const UserSidebar = ({ isOpen, onToggle, onLogout }) => {
                                 <button
                                     onClick={() => handleNavClick(item)}
                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold transition-colors cursor-pointer ${active
-                                            ? 'bg-indigo-600 text-white'
-                                            : 'text-slate-300 hover:bg-slate-800'
+                                        ? 'bg-indigo-600 text-white'
+                                        : 'text-slate-300 hover:bg-slate-800'
                                         }`}
                                 >
                                     <Icon size={20} />
@@ -90,8 +112,8 @@ const UserSidebar = ({ isOpen, onToggle, onLogout }) => {
                                                     key={sub.label}
                                                     onClick={() => navigate(sub.path)}
                                                     className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${subActive
-                                                            ? 'bg-indigo-600/20 text-indigo-300'
-                                                            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                                                        ? 'bg-indigo-600/20 text-indigo-300'
+                                                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                                                         }`}
                                                 >
                                                     <GitBranch size={14} />
@@ -108,13 +130,24 @@ const UserSidebar = ({ isOpen, onToggle, onLogout }) => {
 
                 {/* Footer / logout */}
                 <div className="px-4 py-4 border-t border-slate-800">
-                    <button
-                        onClick={() => setShowLogoutConfirm(true)}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
-                    >
-                        <LogOut size={20} />
-                        <span>Logout</span>
-                    </button>
+                    {!adminSession && (
+                        <button
+                            onClick={() => setShowLogoutConfirm(true)}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+                        >
+                            <LogOut size={20} />
+                            <span>Logout</span>
+                        </button>
+                    )}
+                    {adminSession && (
+                        <button
+                            onClick={handleBackToAdmin}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+                        >
+                            <ArrowLeft size={20} />
+                            <span>Back to Admin</span>
+                        </button>
+                    )}
                 </div>
             </div>
 

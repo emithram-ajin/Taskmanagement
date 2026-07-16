@@ -107,6 +107,15 @@ const Dashboard = () => {
   const handleQuickLogin = async (userId) => {
     try {
       const data = await apiServices.adminLoginAs(userId);
+
+      // Save the current admin session so we can restore it later ("Back to Admin")
+      const adminSession = {
+        user: localStorage.getItem('user'),
+        token: localStorage.getItem('token'),
+        role: localStorage.getItem('role'),
+      };
+      localStorage.setItem('adminSession', JSON.stringify(adminSession));
+
       localStorage.setItem('user', JSON.stringify(data));
       localStorage.setItem('token', data.token);
       localStorage.setItem('role', data.role);

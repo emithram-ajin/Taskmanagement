@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 import { Users, Pencil, Trash2, Mail, UserPlus, Shield, Eye, EyeOff, KeyRound } from "lucide-react";
 import Modal from "../../components/Modal/Modal";
 import ConfirmModal from "../../components/Modal/ConfirmModal";
@@ -261,17 +262,17 @@ const Members = () => {
       setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
       console.error("Error deleting member:", error);
-      alert("Failed to delete member.");
+      Swal.fire({ title: "Error", text: "Failed to delete member.", icon: "error", confirmButtonColor: "#4f46e5" });
     }
   };
 
   const handleChangePassword = async (newPassword) => {
     try {
       await apiServices.adminChangeUserPassword(passwordModal.userId, newPassword);
-      alert(`Password for ${passwordModal.userName} changed successfully.`);
+      Swal.fire({ title: "Success", text: `Password for ${passwordModal.userName} changed successfully.`, icon: "success", timer: 1000, showConfirmButton: false, width: '400px' });
     } catch (error) {
       console.error("Error changing password:", error);
-      alert(error.response?.data?.message || "Failed to change password.");
+      Swal.fire({ title: "Error", text: error.response?.data?.message || "Failed to change password.", icon: "error", confirmButtonColor: "#4f46e5" });
     }
   };
 

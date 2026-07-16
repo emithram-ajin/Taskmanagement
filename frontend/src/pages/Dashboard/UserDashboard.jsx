@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Swal from "sweetalert2";
 import { Clock, CheckCircle, AlertCircle, MessageSquare, Calendar, Check, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import userapiservicer from '../../services/userapiServices';
@@ -74,7 +75,7 @@ const UserDashboard = () => {
       setOpenStatusId(null);
     } catch (err) {
       console.error("Failed to update status:", err);
-      alert("Failed to update task status");
+      Swal.fire({ title: "Error", text: "Failed to update task status", icon: "error", confirmButtonColor: "#4f46e5" });
     }
   };
 

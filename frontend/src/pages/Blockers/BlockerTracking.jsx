@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from "sweetalert2";
 import { AlertCircle, CheckCircle2, Check, Loader2 } from 'lucide-react';
 import apiServices from '../../services/apiServices';
 
@@ -137,7 +138,7 @@ const BlockerTracking = () => {
                     setBlockerToResolve(null);
                   } catch (error) {
                     console.error('Failed to reset task status', error);
-                    alert('Failed to reset task status. Please try again.');
+                    Swal.fire({ title: "Error", text: 'Failed to reset task status. Please try again.', icon: "error", confirmButtonColor: "#4f46e5" });
                   } finally {
                     setIsResolving(false);
                   }

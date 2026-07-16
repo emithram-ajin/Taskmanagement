@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from "sweetalert2";
 import { Folder, Users, CheckCircle2, AlertCircle, Loader2, ArrowLeft, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useNavigate } from 'react-router-dom';
@@ -122,7 +123,7 @@ const Dashboard = () => {
       window.location.href = '/'; // Reload to mount user layout
     } catch (err) {
       console.error("Login as failed:", err);
-      alert("Failed to switch user session");
+      Swal.fire({ title: "Error", text: "Failed to switch user session", icon: "error", confirmButtonColor: "#4f46e5" });
     }
   };
 

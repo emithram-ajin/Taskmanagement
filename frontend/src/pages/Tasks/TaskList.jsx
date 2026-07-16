@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from "sweetalert2";
 import { Pencil, Trash2, Clock, CheckCircle2, AlertCircle, PlayCircle } from 'lucide-react';
 import CreateTaskModal from '../../components/Modal/CreateTaskModal';
 import ConfirmModal from "../../components/Modal/ConfirmModal";
@@ -74,7 +75,7 @@ const TaskList = () => {
       setEditTask(null);
     } catch (error) {
       console.error("Failed to save task:", error);
-      alert("Failed to save task");
+      Swal.fire({ title: "Error", text: "Failed to save task", icon: "error", confirmButtonColor: "#4f46e5" });
     }
   };
 
@@ -85,7 +86,7 @@ const TaskList = () => {
       setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
       console.error("Failed to delete task:", error);
-      alert("Failed to delete task");
+      Swal.fire({ title: "Error", text: "Failed to delete task", icon: "error", confirmButtonColor: "#4f46e5" });
     }
   };
 

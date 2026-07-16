@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from "sweetalert2";
 import Modal from './Modal';
 import CustomDropdown from '../Dropdown/CustomDropdown';
 
@@ -41,7 +42,7 @@ const CreateTaskModal = ({ isOpen, onClose, onSave, allProjects = [], allMembers
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!project || !assignee) {
-      alert("Please select a project and an assignee");
+      Swal.fire({ title: "Error", text: "Please select a project and an assignee", icon: "error", confirmButtonColor: "#4f46e5" });
       return;
     }
     setIsSubmitting(true);

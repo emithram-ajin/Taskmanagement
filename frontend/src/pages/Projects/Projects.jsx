@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from "sweetalert2";
 import { FolderKanban, Pencil, Trash2 } from 'lucide-react';
 import CreateProjectModal from '../../components/Modal/CreateProjectModal';
 import ConfirmModal from "../../components/Modal/ConfirmModal";
@@ -63,7 +64,7 @@ const Projects = () => {
       setEditProject(null);
     } catch (error) {
       console.error("Failed to save project:", error);
-      alert("Failed to save project");
+      Swal.fire({ title: "Error", text: "Failed to save project", icon: "error", confirmButtonColor: "#4f46e5" });
     }
   };
 
@@ -74,7 +75,7 @@ const Projects = () => {
       setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
       console.error("Failed to delete project:", error);
-      alert("Failed to delete project");
+      Swal.fire({ title: "Error", text: "Failed to delete project", icon: "error", confirmButtonColor: "#4f46e5" });
     }
   };
 

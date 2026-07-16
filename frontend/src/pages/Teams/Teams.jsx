@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 import { Users, Pencil, Trash2, UserPlus } from "lucide-react";
 import CreateTeamModal from "../../components/Modal/CreateTeamModal";
 import EditTeamModal from "../../components/Modal/EditTeamModal";
@@ -51,7 +52,7 @@ const Teams = () => {
       setIsCreateModalOpen(false);
     } catch (error) {
       console.error("Failed to create team:", error);
-      alert("Failed to create team");
+      Swal.fire({ title: "Error", text: "Failed to create team", icon: "error", confirmButtonColor: "#4f46e5" });
     }
   };
 
@@ -63,7 +64,7 @@ const Teams = () => {
       setIsAddMemberModalOpen(false);
     } catch (error) {
       console.error("Failed to update team:", error);
-      alert("Failed to update team");
+      Swal.fire({ title: "Error", text: "Failed to update team", icon: "error", confirmButtonColor: "#4f46e5" });
     }
   };
 
@@ -73,7 +74,7 @@ const Teams = () => {
       setTeams(teams.filter((t) => t._id !== teamId));
     } catch (error) {
       console.error("Failed to delete team:", error);
-      alert("Failed to delete team");
+      Swal.fire({ title: "Error", text: "Failed to delete team", icon: "error", confirmButtonColor: "#4f46e5" });
     }
   };
 

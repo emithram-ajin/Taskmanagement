@@ -205,7 +205,66 @@ function ModernSelect({ value, options, onChange, loading }) {
     );
 }
 
-function TaskCard({ task, onDragStart, style }) {
+function CardMoveSelect({ currentStatus, onMoveStatus }) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
+
+    useEffect(() => {
+        function handleClickOutside(e) {
+            if (ref.current && !ref.current.contains(e.target)) {
+                setOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    return (
+        <div ref={ref} className="sm:hidden relative shrink-0">
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-[11px] font-bold uppercase rounded-lg py-1.5 pl-3 pr-2 transition-colors duration-150"
+            >
+                Move
+                <ChevronDown size={14} className={`text-slate-500 transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
+            </button>
+
+            {open && (
+                <div className="absolute right-0 bottom-full mb-1.5 z-[60] w-44 bg-white border border-slate-200 rounded-xl shadow-xl p-1.5 flex flex-col gap-1 origin-bottom-right animate-in fade-in zoom-in-95 duration-150">
+                    <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-2 py-1">
+                        Move task to...
+                    </div>
+                    {COLUMNS.map((col) => {
+                        const isSelected = col.key === currentStatus;
+                        return (
+                            <button
+                                key={col.key}
+                                type="button"
+                                disabled={isSelected}
+                                onClick={() => {
+                                    if (!isSelected) {
+                                        onMoveStatus(col.key);
+                                    }
+                                    setOpen(false);
+                                }}
+                                className={`w-full text-left px-3 py-2 text-[12px] font-bold uppercase rounded-lg transition-colors duration-150 ${
+                                    isSelected
+                                        ? "bg-slate-50 text-slate-400 cursor-not-allowed"
+                                        : "text-slate-700 hover:bg-indigo-50 hover:text-indigo-700"
+                                }`}
+                            >
+                                {col.label}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function TaskCard({ task, onDragStart, onMoveStatus, style }) {
     const flagColor = task.priority === "high" ? "text-rose-500" : "text-amber-400";
     const isBlocked = task.status === "blocker";
 
@@ -258,11 +317,15 @@ function TaskCard({ task, onDragStart, style }) {
                 <span className="text-slate-600 font-medium">{task.assignee}</span>
             </div>
 
-            {/* Project tag */}
-            <div>
-                <span className="text-[13px] font-normal text-gray-600">
+            {/* Footer: Project tag & Mobile Move */}
+            <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-50">
+                <span className="text-[12px] font-medium text-slate-500 truncate pr-2">
                     {task.project}
                 </span>
+                <CardMoveSelect 
+                    currentStatus={task.status} 
+                    onMoveStatus={(newStatus) => onMoveStatus && onMoveStatus(task.id, newStatus)} 
+                />
             </div>
         </div>
     );
@@ -370,8 +433,14 @@ export default function TaskBoard() {
 
     const handleDrop = async (columnKey) => {
         if (dragTaskId == null) return;
+        await moveTask(dragTaskId, columnKey);
+    };
 
-        const taskId = dragTaskId;
+    const handleMoveTask = async (taskId, columnKey) => {
+        await moveTask(taskId, columnKey);
+    };
+
+    const moveTask = async (taskId, columnKey) => {
         const apiStatus = COLUMN_TO_STATUS[columnKey];
 
         // Keep the previous state around so we can roll back if the API call fails.
@@ -411,14 +480,14 @@ export default function TaskBoard() {
     };
 
     return (
-        <div className="px-8 py-6 flex flex-col">
+        <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col">
             <style>{ANIMATION_STYLES}</style>
 
             {/* Page Header */}
-            <div className="tb-header-in relative z-30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 shrink-0">
+            <div className="tb-header-in relative z-30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8 shrink-0">
                 <div>
-                    <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">Task Board</h1>
-                    <p className="text-slate-500 text-[16px] mt-1">Drag tasks between columns to update status</p>
+                    <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">Task Board</h1>
+                    <p className="text-slate-500 text-sm sm:text-[16px] mt-1">Drag tasks between columns to update status</p>
                 </div>
                 <ModernSelect
                     value={selectedProject}
@@ -480,6 +549,7 @@ export default function TaskBoard() {
                                             <TaskCard
                                                 task={task}
                                                 onDragStart={handleDragStart}
+                                                onMoveStatus={handleMoveTask}
                                                 style={{ animationDelay: `${i * 60}ms` }}
                                             />
                                         </div>

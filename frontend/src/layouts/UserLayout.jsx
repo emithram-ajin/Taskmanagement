@@ -4,7 +4,10 @@ import UserDashboard from '../pages/Dashboard/UserDashboard';
 import userapiservicer from '../services/userapiServices';
 
 const UserLayout = ({ children, currentUser, onLogout }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // Start closed on mobile (window check for SSR safety)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : true
+  );
 
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -51,23 +54,39 @@ const UserLayout = ({ children, currentUser, onLogout }) => {
 
   return (
     <div className="flex min-h-screen bg-slate-50">
+      {/* Mobile backdrop overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 z-40 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <UserSidebar isOpen={isSidebarOpen} onToggle={setIsSidebarOpen} onLogout={onLogout} />
 
-      {/* Right side container */}
+      {/* Right side container — no left margin on mobile (sidebar overlays), margin on md+ */}
       <div
         className={`flex-1 flex flex-col min-h-screen overflow-y-auto transition-all duration-300 ${
-          isSidebarOpen ? 'ml-72' : 'ml-0'
+          isSidebarOpen ? 'md:ml-72' : 'ml-0'
         }`}
       >
         {/* Header bar */}
-        <header className="sticky top-0 bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 z-40 w-full shrink-0">
-          <div
-            className={`flex items-center text-sm font-medium text-slate-900 transition-all duration-300 ${
-              isSidebarOpen ? 'pl-0' : 'pl-12'
-            }`}
-          >
-            ProjectFlow User Portal
+        <header className="sticky top-0 bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 z-40 w-full shrink-0">
+          <div className="flex items-center gap-3 text-sm font-medium text-slate-900">
+            {/* Hamburger — visible when sidebar is closed */}
+            {!isSidebarOpen && (
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                aria-label="Open menu"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            )}
+            <span>ProjectFlow User Portal</span>
           </div>
 
           {/* Avatar + profile popover */}

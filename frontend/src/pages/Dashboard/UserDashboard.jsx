@@ -94,33 +94,33 @@ const UserDashboard = () => {
   }
 
   return (
-    <div className="pl-6 pr-10 py-8 w-full">
+    <div className="p-4 sm:p-6 lg:p-8 w-full">
       {/* Page heading */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">My Tasks</h1>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">My Tasks</h1>
         <p className="text-slate-500 text-sm mt-1">Your assignments and upcoming deadlines</p>
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8 ">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8 ">
         {stats.map(({ label, value, icon: Icon, iconBg, iconColor }) => (
           <div
             key={label}
             className="bg-white rounded-2xl border border-slate-200/60 shadow-xs p-6 flex items-center justify-between min-w-0"
           >
-            <div className="flex flex-col gap-3.5 items-start">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg}`}>
-                <Icon size={18} className={iconColor} />
+            <div className="flex flex-col gap-2 sm:gap-3.5 items-start">
+              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center ${iconBg}`}>
+                <Icon size={16} className={`sm:w-[18px] sm:h-[18px] ${iconColor}`} />
               </div>
-              <p className="text-slate-600 text-md font-semibold">{label}</p>
+              <p className="text-slate-600 text-sm font-semibold">{label}</p>
             </div>
-            <span className="text-4xl font-semibold text-slate-900 pr-2">{value}</span>
+            <span className="text-3xl sm:text-4xl font-semibold text-slate-900 pr-1 sm:pr-2">{value}</span>
           </div>
         ))}
       </div>
 
       {/* Info panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-9">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-9">
         {/* Overdue Tasks */}
         <div className="bg-red-50 border border-red-200 min-h-[180px] rounded-2xl p-6 flex flex-col justify-between">
           <div>
@@ -197,8 +197,8 @@ const UserDashboard = () => {
       </div>
 
       {/* Upcoming Deadlines */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 mb-8">
-        <h3 className="font-bold text-slate-900 text-xl mb-6">Upcoming Deadlines</h3>
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-8 mb-6 sm:mb-8">
+        <h3 className="font-bold text-slate-900 text-lg sm:text-xl mb-4 sm:mb-6">Upcoming Deadlines</h3>
         <div className="divide-y divide-slate-100">
           {tasks.length > 0 ? (
             tasks.slice(0, 5).map(({ _id, title, project, priority, deadline, status }) => (
@@ -262,7 +262,7 @@ const UserDashboard = () => {
       </div>
 
       {/* Quick status row: In Progress / To Do / My Productivity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* In Progress quick list */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
           <h3 className="font-semibold text-slate-900 text-lg mb-4">In Progress</h3>

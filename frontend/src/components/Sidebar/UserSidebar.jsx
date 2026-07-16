@@ -49,6 +49,10 @@ const UserSidebar = ({ isOpen, onToggle, onLogout }) => {
             setExpandedItem(expandedItem === item.label ? null : item.label);
         }
         navigate(item.path);
+        // Auto-close sidebar on mobile after navigation
+        if (window.innerWidth < 768) {
+            onToggle(false);
+        }
     };
 
     const confirmLogout = () => {

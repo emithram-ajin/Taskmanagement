@@ -330,17 +330,17 @@ export default function Dependencies() {
     };
 
     return (
-        <div className="flex justify-center px-8 py-6">
+        <div className="flex justify-center px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
             <div className="w-full max-w-6xl">
                 {/* Page Header */}
-                <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
+                <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200">
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200">
                             <FolderGit2 size={20} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-slate-900">Dependencies</h1>
-                            <p className="text-slate-500 text-sm">Manage dependencies for this task.</p>
+                            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Dependencies</h1>
+                            <p className="text-slate-500 text-xs sm:text-sm">Manage dependencies for this task.</p>
                         </div>
                     </div>
 
@@ -405,10 +405,10 @@ export default function Dependencies() {
                             </div>
                             <button
                                 onClick={handleOpenAdd}
-                                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm rounded-xl px-4 py-2.5 shadow-md shadow-indigo-200 hover:shadow-lg transition-all duration-200 cursor-pointer"
+                                className="flex items-center gap-1.5 sm:gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm rounded-xl p-2 sm:px-4 sm:py-2.5 shadow-md shadow-indigo-200 hover:shadow-lg transition-all duration-200 cursor-pointer"
                             >
                                 <Plus size={16} strokeWidth={2.5} />
-                                Add Dependency
+                                <span className="hidden sm:inline">Add Dependency</span>
                             </button>
                         </div>
 

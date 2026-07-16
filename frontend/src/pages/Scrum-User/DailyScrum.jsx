@@ -379,13 +379,13 @@ export default function DailyScrum() {
     const projectOptions = projects.map((p) => ({ value: p._id, label: p.projectName }));
 
     return (
-        <div className="min-h-screen bg-slate-50 px-8 py-6">
+        <div className="min-h-screen bg-slate-50 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
             <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
             {/* Page Header */}
-            <div className="mb-6">
-                <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">Daily Scrum Updates</h1>
-                <p className="text-slate-500 text-[16px] mt-1">Submit your daily standup</p>
+            <div className="mb-4 sm:mb-6">
+                <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">Daily Scrum Updates</h1>
+                <p className="text-slate-500 text-sm sm:text-[16px] mt-1">Submit your daily standup</p>
             </div>
 
             <div className="flex flex-col gap-6">

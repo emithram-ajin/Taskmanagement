@@ -537,12 +537,12 @@ export default function TaskDetails() {
     const clearFilters = () => setFilters(EMPTY_FILTERS);
 
     return (
-        <div className="bg-slate-50 min-h-screen px-8 py-6">
+        <div className="bg-slate-50 min-h-screen px-4 sm:px-6 lg:px-8 py-4 sm:py-6 w-full max-w-full overflow-hidden">
             {/* Title */}
-            <h1 className="text-[32px] font-bold text-gray-900 mb-1">
+            <h1 className="text-2xl sm:text-[32px] font-bold text-gray-900 mb-1">
                 Task Management
             </h1>
-            <p className="text-gray-500 text-[15px] mb-6">Create and manage tasks</p>
+            <p className="text-gray-500 text-sm sm:text-[15px] mb-4 sm:mb-6">Create and manage tasks</p>
 
             {/* Filter toolbar — standalone pills sitting directly above the table */}
             <div className="flex flex-wrap items-center gap-2 mb-4">

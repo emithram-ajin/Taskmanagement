@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Folder, Users, CheckCircle2, AlertCircle, Loader2, ArrowLeft, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 import apiServices from '../../services/apiServices';
 
-const MetricCard = ({ title, value, icon: Icon, colorClass, iconBgClass }) => (
-  <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+const MetricCard = ({ title, value, icon: Icon, colorClass, iconBgClass, onClick }) => (
+  <div 
+    onClick={onClick}
+    className={`bg-white rounded-xl border border-slate-200 p-6 shadow-sm transition-all ${onClick ? 'cursor-pointer hover:shadow-lg hover:-translate-y-1' : ''}`}
+  >
     <div className="flex items-start justify-between">
       <div className={`p-3 rounded-lg ${iconBgClass}`}>
         <Icon className={`w-6 h-6 ${colorClass}`} />
@@ -16,6 +20,7 @@ const MetricCard = ({ title, value, icon: Icon, colorClass, iconBgClass }) => (
 );
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     activeProjects: 0,
     totalTeams: 0,
@@ -144,6 +149,7 @@ const Dashboard = () => {
           icon={Folder} 
           colorClass="text-indigo-600" 
           iconBgClass="bg-indigo-50" 
+          onClick={() => navigate('/projects')}
         />
         <MetricCard 
           title="Total Teams" 
@@ -151,6 +157,7 @@ const Dashboard = () => {
           icon={Users} 
           colorClass="text-purple-600" 
           iconBgClass="bg-purple-50" 
+          onClick={() => navigate('/members')}
         />
         <MetricCard 
           title="Task Completion" 
@@ -158,6 +165,7 @@ const Dashboard = () => {
           icon={CheckCircle2} 
           colorClass="text-emerald-600" 
           iconBgClass="bg-emerald-50" 
+          onClick={() => navigate('/tasks')}
         />
         <MetricCard 
           title="Active Blockers" 
@@ -165,6 +173,7 @@ const Dashboard = () => {
           icon={AlertCircle} 
           colorClass="text-rose-600" 
           iconBgClass="bg-rose-50" 
+          onClick={() => navigate('/blockers')}
         />
       </div>
 
@@ -217,7 +226,10 @@ const Dashboard = () => {
 
       {/* Delayed Tasks Alert */}
       {delayedCount > 0 && (
-        <div className="mt-6 bg-rose-50 border border-rose-100 rounded-xl p-5 flex items-start space-x-4">
+        <div 
+          onClick={() => navigate('/tasks')}
+          className="mt-6 bg-rose-50 border border-rose-100 rounded-xl p-5 flex items-start space-x-4 cursor-pointer hover:bg-rose-100/70 hover:shadow-sm transition-all"
+        >
           <div className="bg-rose-100 p-2 rounded-full text-rose-600 mt-0.5">
             <AlertCircle className="w-5 h-5" />
           </div>
@@ -231,7 +243,10 @@ const Dashboard = () => {
       {/* Bottom Grid */}
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Blockers */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm flex flex-col lg:col-span-2">
+        <div 
+          onClick={() => navigate('/blockers')}
+          className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm flex flex-col lg:col-span-2 cursor-pointer hover:shadow-md hover:-translate-y-1 transition-all"
+        >
           <h2 className="text-lg font-semibold text-slate-800 mb-6">Recent Blockers</h2>
           <div className="space-y-4 flex-1">
             {recentBlockers.length > 0 ? (

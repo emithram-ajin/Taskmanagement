@@ -342,7 +342,14 @@ export default function TaskBoard() {
     const [selectedProject, setSelectedProject] = useState(ALL_PROJECTS);
     const [projects, setProjects] = useState([ALL_PROJECTS]);
     const [projectsLoading, setProjectsLoading] = useState(true);
+    const [visibleLimits, setVisibleLimits] = useState({});
     const popTimeout = useRef(null);
+
+    const getLimit = (colKey) => visibleLimits[colKey] || 5;
+
+    const handleShowMore = (colKey) => {
+        setVisibleLimits((prev) => ({ ...prev, [colKey]: getLimit(colKey) + 5 }));
+    };
 
     // Fetch the logged-in user's tasks for the board, same endpoint TaskDetails uses.
     useEffect(() => {
@@ -518,6 +525,10 @@ export default function TaskBoard() {
                             .slice()
                             .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
                         const isOver = dragOverCol === col.key;
+                        
+                        const limit = getLimit(col.key);
+                        const displayedTasks = colTasks.slice(0, limit);
+                        const hasMore = colTasks.length > limit;
 
                         return (
                             <div
@@ -544,7 +555,7 @@ export default function TaskBoard() {
 
                                 {/* Cards */}
                                 <div className="tb-scroll-col px-4 pb-5 flex flex-col gap-3 flex-1 max-h-[calc(100vh-260px)] overflow-y-auto">
-                                    {colTasks.map((task, i) => (
+                                    {displayedTasks.map((task, i) => (
                                         <div key={task.id} data-task-id={task.id}>
                                             <TaskCard
                                                 task={task}
@@ -554,6 +565,16 @@ export default function TaskBoard() {
                                             />
                                         </div>
                                     ))}
+
+                                    {hasMore && (
+                                        <button
+                                            onClick={() => handleShowMore(col.key)}
+                                            className="w-full py-2 mt-1 border border-slate-300 border-dashed rounded-xl text-slate-500 font-semibold text-[13px] hover:bg-slate-50 hover:text-indigo-600 transition-colors cursor-pointer flex items-center justify-center gap-1"
+                                        >
+                                            Show More
+                                            <ChevronDown size={14} className="opacity-70" />
+                                        </button>
+                                    )}
 
                                     {colTasks.length === 0 && (
                                         <div

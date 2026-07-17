@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Flag, CalendarDays, User, ChevronDown, AlertTriangle, Loader2 } from "lucide-react";
 import userapiservicer from "../../services/userapiServices";
 
@@ -7,6 +7,7 @@ const COLUMNS = [
     {
         key: "todo",
         label: "TO DO",
+        apiStatus: "assigned",
         headerColor: "text-slate-700",
         colBorder: "border border-slate-200",
         bgColor: "bg-white",
@@ -15,10 +16,10 @@ const COLUMNS = [
         dropHighlight: "bg-slate-50",
         emptyBorder: "border-slate-300",
     },
-    
     {
         key: "in-progress",
         label: "IN PROGRESS",
+        apiStatus: "progress",
         headerColor: "text-indigo-600",
         colBorder: "border border-indigo-200",
         bgColor: "bg-indigo-50/30",
@@ -30,6 +31,7 @@ const COLUMNS = [
     {
         key: "blocker",
         label: "BLOCKER",
+        apiStatus: "blocker",
         headerColor: "text-rose-600",
         colBorder: "border border-rose-200",
         bgColor: "bg-rose-50/30",
@@ -41,6 +43,7 @@ const COLUMNS = [
     {
         key: "completed",
         label: "COMPLETED",
+        apiStatus: "completed",
         headerColor: "text-emerald-600",
         colBorder: "border border-emerald-200",
         bgColor: "bg-emerald-50/30",
@@ -51,10 +54,10 @@ const COLUMNS = [
     },
 ];
 
+const PAGE_LIMIT = 10;
 const ALL_PROJECTS = "All Projects";
 
 // Maps the backend's task.status enum to the column keys this board uses.
-// (Board columns use "todo" / "in-progress"; the API uses "assigned" / "progress".)
 const STATUS_TO_COLUMN = {
     assigned: "todo",
     blocker: "blocker",
@@ -62,8 +65,7 @@ const STATUS_TO_COLUMN = {
     completed: "completed",
 };
 
-// Inverse map, in case you need to send a column key back to the API later
-// (e.g. when persisting a drag-and-drop status change).
+// Inverse map for sending status back to the API.
 const COLUMN_TO_STATUS = {
     todo: "assigned",
     blocker: "blocker",
@@ -322,19 +324,30 @@ function TaskCard({ task, onDragStart, onMoveStatus, style }) {
                 <span className="text-[12px] font-medium text-slate-500 truncate pr-2">
                     {task.project}
                 </span>
-                <CardMoveSelect 
-                    currentStatus={task.status} 
-                    onMoveStatus={(newStatus) => onMoveStatus && onMoveStatus(task.id, newStatus)} 
+                <CardMoveSelect
+                    currentStatus={task.status}
+                    onMoveStatus={(newStatus) => onMoveStatus && onMoveStatus(task.id, newStatus)}
                 />
             </div>
         </div>
     );
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Per-column state shape:
+//   { tasks: [], page: 1, totalPages: 1, total: 0, loading: false, loadingMore: false, error: null }
+// ──────────────────────────────────────────────────────────────────────────────
+function makeColState() {
+    return { tasks: [], page: 1, totalPages: 1, total: 0, loading: true, loadingMore: false, error: null };
+}
+
 export default function TaskBoard() {
-    const [tasks, setTasks] = useState([]);
-    const [tasksLoading, setTasksLoading] = useState(true);
-    const [tasksError, setTasksError] = useState(null);
+    // colData[colKey] = { tasks, page, totalPages, total, loading, loadingMore, error }
+    const [colData, setColData] = useState(() => {
+        const init = {};
+        COLUMNS.forEach((c) => { init[c.key] = makeColState(); });
+        return init;
+    });
 
     const [dragTaskId, setDragTaskId] = useState(null);
     const [dragOverCol, setDragOverCol] = useState(null);
@@ -342,84 +355,113 @@ export default function TaskBoard() {
     const [selectedProject, setSelectedProject] = useState(ALL_PROJECTS);
     const [projects, setProjects] = useState([ALL_PROJECTS]);
     const [projectsLoading, setProjectsLoading] = useState(true);
-    const [visibleLimits, setVisibleLimits] = useState({});
+    const [globalError, setGlobalError] = useState(null);
     const popTimeout = useRef(null);
 
-    const getLimit = (colKey) => visibleLimits[colKey] || 5;
+    // ── Helpers ────────────────────────────────────────────────────────────────
 
-    const handleShowMore = (colKey) => {
-        setVisibleLimits((prev) => ({ ...prev, [colKey]: getLimit(colKey) + 5 }));
-    };
-
-    // Fetch the logged-in user's tasks for the board, same endpoint TaskDetails uses.
-    useEffect(() => {
-        let isMounted = true;
-
-        async function loadTasks() {
-            setTasksLoading(true);
-            setTasksError(null);
-            try {
-                const data = await userapiservicer.getMyTasks();
-                const normalized = (data.tasks || []).map(normalizeTask);
-                if (isMounted) setTasks(normalized);
-            } catch (err) {
-                console.error("Failed to fetch tasks:", err);
-                if (isMounted) {
-                    setTasksError(err?.response?.data?.message || "Failed to load tasks");
-                }
-            } finally {
-                if (isMounted) setTasksLoading(false);
-            }
-        }
-
-        loadTasks();
-        return () => {
-            isMounted = false;
-        };
+    const setCol = useCallback((colKey, patch) => {
+        setColData((prev) => ({
+            ...prev,
+            [colKey]: { ...prev[colKey], ...(typeof patch === "function" ? patch(prev[colKey]) : patch) },
+        }));
     }, []);
 
-    // Fetch the project list from the API for the dropdown.
+    // ── Fetch one page for a column ────────────────────────────────────────────
+
+    const fetchColPage = useCallback(async (col, page, projectFilter, append = false) => {
+        const params = {
+            status: col.apiStatus,
+            page,
+            limit: PAGE_LIMIT,
+        };
+
+        try {
+            const data = await userapiservicer.getMyTasks(params);
+            let normalized = (data.tasks || []).map(normalizeTask);
+
+            // If a project filter is active, apply it client-side on the fetched page.
+            // (The backend doesn't support project filtering yet; this keeps it light.)
+            if (projectFilter && projectFilter !== ALL_PROJECTS) {
+                normalized = normalized.filter((t) => t.project === projectFilter);
+            }
+
+            setCol(col.key, (prev) => ({
+                tasks: append ? [...prev.tasks, ...normalized] : normalized,
+                page: data.currentPage || page,
+                totalPages: data.totalPages || 1,
+                total: data.totalTasks || normalized.length,
+                loading: false,
+                loadingMore: false,
+                error: null,
+            }));
+        } catch (err) {
+            console.error(`Failed to fetch tasks for column "${col.key}":`, err);
+            setCol(col.key, {
+                loading: false,
+                loadingMore: false,
+                error: err?.response?.data?.message || "Failed to load tasks",
+            });
+        }
+    }, [setCol]);
+
+    // ── Initial load — fetch page 1 for every column in parallel ──────────────
+
+    useEffect(() => {
+        // Reset all columns to loading state
+        const init = {};
+        COLUMNS.forEach((c) => { init[c.key] = makeColState(); });
+        setColData(init);
+
+        COLUMNS.forEach((col) => fetchColPage(col, 1, selectedProject, false));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedProject]); // re-fetch all columns when project filter changes
+
+    // ── "Show More" — fetch next page and append ───────────────────────────────
+
+    const handleShowMore = useCallback((col) => {
+        const state = colData[col.key];
+        if (state.loadingMore || state.page >= state.totalPages) return;
+        const nextPage = state.page + 1;
+        setCol(col.key, { loadingMore: true });
+        fetchColPage(col, nextPage, selectedProject, true);
+    }, [colData, selectedProject, setCol, fetchColPage]);
+
+    // ── Projects dropdown ──────────────────────────────────────────────────────
+
     useEffect(() => {
         let isMounted = true;
-
         async function loadProjects() {
             setProjectsLoading(true);
             try {
                 const res = await userapiservicer.getProjects();
                 const list = Array.isArray(res) ? res : res?.projects || [];
                 const names = list.map((p) => p.projectName).filter(Boolean);
-
-                if (isMounted) {
-                    setProjects([ALL_PROJECTS, ...names]);
-                }
+                if (isMounted) setProjects([ALL_PROJECTS, ...names]);
             } catch (err) {
                 console.error("Failed to fetch projects:", err);
-                // Fallback: derive project list from whatever tasks are currently loaded,
-                // so the dropdown still works even if the endpoint is down.
+                // Fallback: derive project list from currently loaded tasks
                 if (isMounted) {
-                    const fallback = Array.from(new Set(tasks.map((t) => t.project)));
+                    const allTasks = Object.values(colData).flatMap((c) => c.tasks);
+                    const fallback = Array.from(new Set(allTasks.map((t) => t.project)));
                     setProjects([ALL_PROJECTS, ...fallback]);
                 }
             } finally {
                 if (isMounted) setProjectsLoading(false);
             }
         }
-
         loadProjects();
-        return () => {
-            isMounted = false;
-        };
+        return () => { isMounted = false; };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // fetch once on mount
+    }, []);
 
-    const visibleTasks =
-        selectedProject === ALL_PROJECTS
-            ? tasks
-            : tasks.filter((t) => t.project === selectedProject);
+    // ── Cleanup ────────────────────────────────────────────────────────────────
 
     useEffect(() => {
         return () => clearTimeout(popTimeout.current);
     }, []);
+
+    // ── Drag & Drop ────────────────────────────────────────────────────────────
 
     const handleDragStart = (e, id) => {
         setDragTaskId(id);
@@ -450,26 +492,45 @@ export default function TaskBoard() {
     const moveTask = async (taskId, columnKey) => {
         const apiStatus = COLUMN_TO_STATUS[columnKey];
 
-        // Keep the previous state around so we can roll back if the API call fails.
-        const prevTasks = tasks;
-        const prevTask = tasks.find((t) => t.id === taskId);
+        // Find the task and its current column
+        let prevTask = null;
+        let fromColKey = null;
+        for (const col of COLUMNS) {
+            const found = colData[col.key].tasks.find((t) => t.id === taskId);
+            if (found) {
+                prevTask = found;
+                fromColKey = col.key;
+                break;
+            }
+        }
 
-        // Nothing to do if it was dropped back into the same column.
         if (!prevTask || prevTask.status === columnKey) {
             setDragTaskId(null);
             setDragOverCol(null);
             return;
         }
 
-        // Optimistic update — move the card immediately, don't wait on the network.
-        setTasks((prev) =>
-            prev.map((t) =>
-                t.id === taskId ? { ...t, status: columnKey, updatedAt: Date.now() } : t
-            )
-        );
+        // Optimistic update — remove from source column, add to target column
+        setColData((prev) => {
+            const next = { ...prev };
+            // Remove from source
+            next[fromColKey] = {
+                ...next[fromColKey],
+                tasks: next[fromColKey].tasks.filter((t) => t.id !== taskId),
+                total: Math.max(0, next[fromColKey].total - 1),
+            };
+            // Add to target (at top, since most recently updated)
+            const movedTask = { ...prevTask, status: columnKey, updatedAt: Date.now() };
+            next[columnKey] = {
+                ...next[columnKey],
+                tasks: [movedTask, ...next[columnKey].tasks],
+                total: next[columnKey].total + 1,
+            };
+            return next;
+        });
+
         setDragTaskId(null);
         setDragOverCol(null);
-
         setPoppedCol(columnKey);
         clearTimeout(popTimeout.current);
         popTimeout.current = setTimeout(() => setPoppedCol(null), 350);
@@ -478,13 +539,18 @@ export default function TaskBoard() {
             await userapiservicer.updateTaskStatus(taskId, apiStatus);
         } catch (err) {
             console.error("Failed to update task status:", err);
-            // Roll back to the pre-drop state and let the user know.
-            setTasks(prevTasks);
-            setTasksError(
-                err?.response?.data?.message || "Failed to update task status. Please try again."
-            );
+            setGlobalError(err?.response?.data?.message || "Failed to update task status. Please try again.");
+            // Roll back: re-fetch both affected columns
+            const fromCol = COLUMNS.find((c) => c.key === fromColKey);
+            const toCol = COLUMNS.find((c) => c.key === columnKey);
+            if (fromCol) fetchColPage(fromCol, 1, selectedProject, false);
+            if (toCol) fetchColPage(toCol, 1, selectedProject, false);
         }
     };
+
+    // ── Render ─────────────────────────────────────────────────────────────────
+
+    const anyLoading = COLUMNS.every((c) => colData[c.key].loading);
 
     return (
         <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col">
@@ -504,31 +570,25 @@ export default function TaskBoard() {
                 />
             </div>
 
-            {tasksError && (
-                <div className="mb-4 text-sm text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-4 py-2.5">
-                    {tasksError}
+            {globalError && (
+                <div className="mb-4 text-sm text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-4 py-2.5 flex items-center justify-between">
+                    <span>{globalError}</span>
+                    <button onClick={() => setGlobalError(null)} className="ml-4 text-rose-400 hover:text-rose-600 font-bold text-base leading-none">×</button>
                 </div>
             )}
 
-            {tasksLoading ? (
+            {anyLoading ? (
                 <div className="flex items-center justify-center gap-2 text-slate-400 text-sm py-16">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Loading tasks...
                 </div>
             ) : (
-                /* Kanban Columns — equal-width grid, fills the container width instead of scrolling horizontally */
+                /* Kanban Columns */
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 items-stretch">
-
                     {COLUMNS.map((col, colIndex) => {
-                        const colTasks = visibleTasks
-                            .filter((t) => t.status === col.key)
-                            .slice()
-                            .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+                        const state = colData[col.key];
                         const isOver = dragOverCol === col.key;
-                        
-                        const limit = getLimit(col.key);
-                        const displayedTasks = colTasks.slice(0, limit);
-                        const hasMore = colTasks.length > limit;
+                        const hasMore = state.page < state.totalPages;
 
                         return (
                             <div
@@ -536,6 +596,7 @@ export default function TaskBoard() {
                                 onDragOver={(e) => { e.preventDefault(); setDragOverCol(col.key); }}
                                 onDragLeave={() => setDragOverCol(null)}
                                 onDrop={() => handleDrop(col.key)}
+                                onDragEnd={handleDragEnd}
                                 style={{ animationDelay: `${colIndex * 80}ms` }}
                                 className={`tb-column-in flex flex-col rounded-xl w-full h-full ${col.colBorder} ${isOver ? col.dropHighlight : col.bgColor} transition-colors duration-200`}
                             >
@@ -546,42 +607,66 @@ export default function TaskBoard() {
                                         {col.label}
                                     </span>
                                     <span
-                                        key={colTasks.length}
+                                        key={state.total}
                                         className={`min-w-[26px] h-[26px] px-1.5 flex items-center justify-center rounded-full text-[12px] font-bold ${col.badgeBg} ${col.badgeText} ${poppedCol === col.key ? "tb-badge-pop" : ""}`}
                                     >
-                                        {colTasks.length}
+                                        {state.loading ? "…" : state.total}
                                     </span>
                                 </div>
 
                                 {/* Cards */}
                                 <div className="tb-scroll-col px-4 pb-5 flex flex-col gap-3 flex-1 max-h-[calc(100vh-260px)] overflow-y-auto">
-                                    {displayedTasks.map((task, i) => (
-                                        <div key={task.id} data-task-id={task.id}>
-                                            <TaskCard
-                                                task={task}
-                                                onDragStart={handleDragStart}
-                                                onMoveStatus={handleMoveTask}
-                                                style={{ animationDelay: `${i * 60}ms` }}
-                                            />
+                                    {state.loading ? (
+                                        <div className="flex items-center justify-center gap-2 text-slate-400 text-sm py-10">
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Loading…
                                         </div>
-                                    ))}
-
-                                    {hasMore && (
-                                        <button
-                                            onClick={() => handleShowMore(col.key)}
-                                            className="w-full py-2 mt-1 border border-slate-300 border-dashed rounded-xl text-slate-500 font-semibold text-[13px] hover:bg-slate-50 hover:text-indigo-600 transition-colors cursor-pointer flex items-center justify-center gap-1"
-                                        >
-                                            Show More
-                                            <ChevronDown size={14} className="opacity-70" />
-                                        </button>
-                                    )}
-
-                                    {colTasks.length === 0 && (
-                                        <div
-                                            className={`tb-empty-in rounded-xl border-2 border-dashed ${col.emptyBorder} flex-1 min-h-[110px] flex items-center justify-center text-center`}
-                                        >
-                                            <p className="text-[14px] font-medium text-slate-400">Drop tasks here</p>
+                                    ) : state.error ? (
+                                        <div className="text-[13px] text-rose-500 bg-rose-50 border border-rose-100 rounded-xl px-3 py-2.5">
+                                            {state.error}
                                         </div>
+                                    ) : (
+                                        <>
+                                            {state.tasks.map((task, i) => (
+                                                <div key={task.id} data-task-id={task.id}>
+                                                    <TaskCard
+                                                        task={task}
+                                                        onDragStart={handleDragStart}
+                                                        onMoveStatus={handleMoveTask}
+                                                        style={{ animationDelay: `${i * 60}ms` }}
+                                                    />
+                                                </div>
+                                            ))}
+
+                                            {/* Show More — triggers next backend page */}
+                                            {hasMore && (
+                                                <button
+                                                    onClick={() => handleShowMore(col)}
+                                                    disabled={state.loadingMore}
+                                                    className="w-full py-2 mt-1 border border-slate-300 border-dashed rounded-xl text-slate-500 font-semibold text-[13px] hover:bg-slate-50 hover:text-indigo-600 transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                                                >
+                                                    {state.loadingMore ? (
+                                                        <>
+                                                            <Loader2 size={13} className="animate-spin opacity-70" />
+                                                            Loading…
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            Show More
+                                                            <ChevronDown size={14} className="opacity-70" />
+                                                        </>
+                                                    )}
+                                                </button>
+                                            )}
+
+                                            {state.tasks.length === 0 && (
+                                                <div
+                                                    className={`tb-empty-in rounded-xl border-2 border-dashed ${col.emptyBorder} flex-1 min-h-[110px] flex items-center justify-center text-center`}
+                                                >
+                                                    <p className="text-[14px] font-medium text-slate-400">Drop tasks here</p>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             </div>

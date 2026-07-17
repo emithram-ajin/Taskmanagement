@@ -595,7 +595,7 @@ export default function TaskDetails() {
                     }`}
                 >
                     <AlertCircle size={14} className={filters.dueProject ? "text-red-500" : "text-gray-400"} />
-                    Due Projects
+                    Due Tasks
                     {filters.dueProject && (
                         <span
                             role="button"

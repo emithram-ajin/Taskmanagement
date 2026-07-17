@@ -171,30 +171,30 @@ const UserDashboard = () => {
         </div>
 
         {/* Daily Scrum */}
-        <div className="bg-indigo-50 border border-indigo-100 min-h-[180px] rounded-2xl p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-                <MessageSquare size={18} className="text-indigo-500" />
-              </div>
-              <h3 className="font-semibold text-indigo-900 text-lg">Daily Scrum</h3>
-            </div>
-            <p className="text-indigo-700 font-medium text-sm leading-normal">
-              {hasScrumToday 
-                ? "You have already submitted today's standup update." 
-                : "You haven't submitted today's scrum update yet."
-              }
-            </p>
-          </div>
-          {!hasScrumToday && (
-            <button 
-              onClick={() => navigate('/Dailyscrum')}
-              className="text-indigo-700 font-bold text-sm hover:underline cursor-pointer flex items-center mt-3 self-start"
-            >
-              Submit Now →
-            </button>
-          )}
-        </div>
+      <div className="bg-indigo-50 border border-indigo-100 min-h-[180px] rounded-2xl p-6 flex flex-col justify-between">
+  <div>
+    <div className="flex items-center gap-3 mb-4">
+      <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+        <MessageSquare size={18} className="text-indigo-500" />
+      </div>
+      <h3 className="font-semibold text-indigo-900 text-lg">Daily Scrum</h3>
+    </div>
+    <p className="text-indigo-700 font-medium text-sm leading-normal">
+      {hasScrumToday 
+        ? "You have already submitted today's standup update." 
+        : "You haven't submitted today's scrum update yet."
+      }
+    </p>
+  </div>
+  {!hasScrumToday && (
+    <button 
+      onClick={() => navigate('/daily-scrum')}
+      className="text-indigo-700 font-bold text-sm hover:underline cursor-pointer flex items-center mt-3 self-start"
+    >
+      Submit Now →
+    </button>
+  )}
+</div>
       </div>
 
       {/* Upcoming Deadlines */}

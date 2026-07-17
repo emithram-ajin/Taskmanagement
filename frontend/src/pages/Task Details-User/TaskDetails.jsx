@@ -9,8 +9,10 @@ import {
     Flag,
     CalendarClock,
     Calendar as CalendarIcon,
+    AlertCircle,
 } from "lucide-react";
 import userapiservicer from "../../services/userapiServices";
+import { useSearchParams } from "react-router-dom";
 
 // Exactly mirrors the Task model's enums (case-sensitive, matches the
 // backend schema verbatim so filter values sent/compared are valid).
@@ -491,14 +493,23 @@ const EMPTY_FILTERS = {
     priority: "",
     deadlineFrom: "",
     deadlineTo: "",
+    dueProject: false,
 };
 
 export default function TaskDetails() {
+    const [searchParams] = useSearchParams();
+    const initialDueFilter = searchParams.get('filter') === 'due';
+    const initialStatusFilter = searchParams.get('status') || "";
+    
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const [filters, setFilters] = useState(EMPTY_FILTERS);
+    const [filters, setFilters] = useState({
+        ...EMPTY_FILTERS,
+        dueProject: initialDueFilter,
+        status: initialStatusFilter
+    });
 
     const fetchMyTasks = async () => {
         setLoading(true);
@@ -520,10 +531,14 @@ export default function TaskDetails() {
     }, []);
 
     const filteredTasks = useMemo(() => {
+        const now = new Date();
         return tasks.filter((t) => {
             if (filters.status && t.status !== filters.status) return false;
             if (filters.priority && t.priority !== filters.priority) return false;
             if (!withinDateRange(t.deadlineRaw, filters.deadlineFrom, filters.deadlineTo)) return false;
+            if (filters.dueProject) {
+                if (!t.deadlineRaw || new Date(t.deadlineRaw) >= now || t.status === 'completed') return false;
+            }
             return true;
         });
     }, [tasks, filters]);
@@ -569,6 +584,33 @@ export default function TaskDetails() {
                     onChangeTo={(val) => updateFilter("deadlineTo", val)}
                     onClear={() => setFilters((prev) => ({ ...prev, deadlineFrom: "", deadlineTo: "" }))}
                 />
+                
+                <button
+                    type="button"
+                    onClick={() => updateFilter("dueProject", !filters.dueProject)}
+                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors duration-150 ${
+                        filters.dueProject
+                            ? "border-red-300 bg-red-50 text-red-700"
+                            : "border-gray-300 bg-white text-gray-600 hover:border-red-300 hover:text-gray-800"
+                    }`}
+                >
+                    <AlertCircle size={14} className={filters.dueProject ? "text-red-500" : "text-gray-400"} />
+                    Due Projects
+                    {filters.dueProject && (
+                        <span
+                            role="button"
+                            tabIndex={-1}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                updateFilter("dueProject", false);
+                            }}
+                            className="ml-0.5 rounded-full hover:bg-red-100 p-0.5"
+                            aria-label={`Clear Due Projects filter`}
+                        >
+                            <X size={12} />
+                        </span>
+                    )}
+                </button>
 
                 {activeFilterCount > 0 && (
                     <button

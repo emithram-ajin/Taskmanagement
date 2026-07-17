@@ -131,9 +131,9 @@ const UserDashboard = () => {
               </div>
               <h3 className="font-semibold text-red-900 text-lg">Overdue Tasks</h3>
             </div>
-            <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
+            <div className="space-y-2">
               {overdueList.length > 0 ? (
-                overdueList.map((task) => (
+                overdueList.slice(0, 2).map((task) => (
                   <div key={task._id} className="flex items-center justify-between gap-5 border-b border-red-100/50 pb-1.5 last:border-0 last:pb-0">
                     <span className="text-[#A90836] font-semibold text-sm truncate max-w-[180px]">{task.title}</span>
                     <span className="text-[#C70036] text-xs shrink-0">{task.project?.projectName || 'No Project'}</span>
@@ -144,6 +144,14 @@ const UserDashboard = () => {
               )}
             </div>
           </div>
+          {overdueList.length > 2 && (
+            <button
+              onClick={() => navigate('/taskDetails?filter=due')}
+              className="text-red-700 font-bold text-sm hover:underline cursor-pointer flex items-center mt-4 self-start"
+            >
+              Click more →
+            </button>
+          )}
         </div>
 
         {/* Active Blockers */}
@@ -155,9 +163,9 @@ const UserDashboard = () => {
               </div>
               <h3 className="font-semibold text-amber-900 text-lg">Active Blockers</h3>
             </div>
-            <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
+            <div className="space-y-2">
               {blockerList.length > 0 ? (
-                blockerList.map((task) => (
+                blockerList.slice(0, 2).map((task) => (
                   <div key={task._id} className="border-b border-amber-200/50 pb-1.5 last:border-0 last:pb-0">
                     <p className="text-amber-950 font-semibold text-sm truncate">{task.title}</p>
                     <p className="text-amber-600 text-xs mt-0.5">{task.project?.projectName || 'No Project'}</p>
@@ -168,33 +176,41 @@ const UserDashboard = () => {
               )}
             </div>
           </div>
+          {blockerList.length > 2 && (
+            <button
+              onClick={() => navigate('/taskDetails?status=blocker')}
+              className="text-amber-700 font-bold text-sm hover:underline cursor-pointer flex items-center mt-4 self-start"
+            >
+              Click more →
+            </button>
+          )}
         </div>
 
         {/* Daily Scrum */}
       <div className="bg-indigo-50 border border-indigo-100 min-h-[180px] rounded-2xl p-6 flex flex-col justify-between">
-  <div>
-    <div className="flex items-center gap-3 mb-4">
-      <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-        <MessageSquare size={18} className="text-indigo-500" />
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+              <MessageSquare size={18} className="text-indigo-500" />
+            </div>
+            <h3 className="font-semibold text-indigo-900 text-lg">Daily Scrum</h3>
+          </div>
+          <p className="text-indigo-700 font-medium text-sm leading-normal">
+            {hasScrumToday 
+              ? "You have already submitted today's standup update." 
+              : "You haven't submitted today's scrum update yet."
+            }
+          </p>
+        </div>
+        {!hasScrumToday && (
+          <button 
+            onClick={() => navigate('/daily-scrum')}
+            className="text-indigo-700 font-bold text-sm hover:underline cursor-pointer flex items-center mt-4 self-start"
+          >
+            Submit Now →
+          </button>
+        )}
       </div>
-      <h3 className="font-semibold text-indigo-900 text-lg">Daily Scrum</h3>
-    </div>
-    <p className="text-indigo-700 font-medium text-sm leading-normal">
-      {hasScrumToday 
-        ? "You have already submitted today's standup update." 
-        : "You haven't submitted today's scrum update yet."
-      }
-    </p>
-  </div>
-  {!hasScrumToday && (
-    <button 
-      onClick={() => navigate('/daily-scrum')}
-      className="text-indigo-700 font-bold text-sm hover:underline cursor-pointer flex items-center mt-3 self-start"
-    >
-      Submit Now →
-    </button>
-  )}
-</div>
       </div>
 
       {/* Upcoming Deadlines */}

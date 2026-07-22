@@ -1,11 +1,31 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FolderGit2 } from 'lucide-react';
+import { FolderGit2, Copy, Check } from 'lucide-react';
 import apiServices from '../../services/apiServices';
 import Loader from '../../components/Loader/Loader';
 import CustomDropdown from '../../components/Dropdown/CustomDropdown';
 import Pagination from '../../components/Pagination/Pagination';
 
 const ALL_PROJECTS = 'All Projects';
+
+const CopyButton = ({ text }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button 
+      onClick={handleCopy} 
+      className="p-1 ml-1 hover:bg-slate-100 rounded-md transition-colors text-slate-400 hover:text-slate-600 focus:outline-none"
+      title="Copy value"
+    >
+      {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+    </button>
+  );
+};
 
 const AdminDependencies = () => {
   const [dependencies, setDependencies] = useState([]);
@@ -132,6 +152,7 @@ const AdminDependencies = () => {
                               <div key={idx} className="inline-flex items-center gap-1.5 text-xs text-slate-600 bg-white border border-slate-200 rounded-md px-2 py-1 shadow-sm">
                                 <span className="font-semibold text-slate-700">{attr.key}:</span>
                                 <span>{attr.value}</span>
+                                <CopyButton text={attr.value} />
                               </div>
                             ))}
                           </div>

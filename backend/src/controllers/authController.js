@@ -31,7 +31,7 @@ export const login = async (req, res) => {
 
 export const getAllMembers = async (req, res) => {
   try {
-    const filter = { role: { $nin: ["admin", "superadmin"] } };
+    const filter = { role: { $nin: ["superadmin"] } };
     const { department } = req.query;
 
     if (department) {

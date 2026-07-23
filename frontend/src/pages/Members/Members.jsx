@@ -138,6 +138,118 @@ const CreateMemberModal = ({
   );
 };
 
+const EditMemberModal = ({
+  isOpen,
+  onClose,
+  onSave,
+  departments,
+  member
+}) => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [department, setDepartment] = useState("");
+  const [role, setRole] = useState("member");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (member) {
+      setName(member.name || "");
+      setEmail(member.email || "");
+      setDepartment(member.department || "");
+      setRole(member.role || "member");
+    }
+  }, [member]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    await onSave(member.id, { name, email, department: role === "superadmin" ? undefined : department, role });
+    setIsSubmitting(false);
+    onClose();
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Edit Member">
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Full Name
+          </label>
+          <input
+            type="text"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Email Address
+          </label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="off"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            System Access Level
+          </label>
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+          >
+            <option value="member">Member</option>
+            <option value="admin">Admin</option>
+            <option value="superadmin">Super Admin</option>
+          </select>
+        </div>
+        {role !== "superadmin" && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Department
+            </label>
+            <select
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+            >
+              {departments.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div className="flex space-x-3 pt-4">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            {isSubmitting ? "Saving..." : "Save Changes"}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
 const ChangePasswordModal = ({
   isOpen,
   onClose,
@@ -209,6 +321,7 @@ const ChangePasswordModal = ({
 
 const Members = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editModal, setEditModal] = useState({ isOpen: false, member: null });
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
   const [passwordModal, setPasswordModal] = useState({ isOpen: false, userId: null, userName: "" });
   const [departments] = useState(["HR", "IT", "Sales", "Marketing"]);
@@ -247,11 +360,23 @@ const Members = () => {
           status: "Active",
         },
       ]);
+      setIsModalOpen(false);
     } catch (error) {
       console.error("Error creating member:", error);
-      alert(
-        "Failed to create member. Ensure the backend is running and you are using a unique email."
-      );
+      Swal.fire({ title: "Error", text: error.response?.data?.message || "Failed to create member.", icon: "error", confirmButtonColor: "#4f46e5" });
+    }
+  };
+
+  const handleEditMember = async (id, memberData) => {
+    try {
+      await apiServices.adminEditUser(id, memberData);
+      const newMemberData = await apiServices.getMembers();
+      setMembers(newMemberData);
+      setEditModal({ isOpen: false, member: null });
+      Swal.fire({ title: "Success", text: "Member updated successfully.", icon: "success", timer: 1000, showConfirmButton: false, width: "400px" });
+    } catch (error) {
+      console.error("Error updating member:", error);
+      Swal.fire({ title: "Error", text: error.response?.data?.message || "Failed to update member.", icon: "error", confirmButtonColor: "#4f46e5" });
     }
   };
 
@@ -392,7 +517,11 @@ const Members = () => {
                         >
                           <KeyRound className="w-4 h-4" />
                         </button>
-                        <button className="text-slate-400 hover:text-indigo-600 p-1 rounded transition-colors">
+                        <button 
+                          onClick={() => setEditModal({ isOpen: true, member })}
+                          className="text-slate-400 hover:text-indigo-600 p-1 rounded transition-colors"
+                          title="Edit Member"
+                        >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button 
@@ -417,6 +546,13 @@ const Members = () => {
         onClose={() => setIsModalOpen(false)}
         onSave={handleAddMember}
         departments={departments}
+      />
+      <EditMemberModal
+        isOpen={editModal.isOpen}
+        onClose={() => setEditModal({ isOpen: false, member: null })}
+        onSave={handleEditMember}
+        departments={departments}
+        member={editModal.member}
       />
       <ChangePasswordModal
         isOpen={passwordModal.isOpen}

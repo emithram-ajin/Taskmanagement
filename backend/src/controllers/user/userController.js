@@ -31,10 +31,11 @@ export const getMyTasks = async (req, res) => {
     const limitNum = parseInt(limit) || 10;
     const skipNum  = (pageNum - 1) * limitNum;
 
-    // Sort options: deadline (default) | createdAt | priority
+    // Sort options: deadline (default) | createdAt | priority | updatedAt
     const sortOptions = {
       deadline:  { deadline: 1 },
       createdAt: { createdAt: -1 },
+      updatedAt: { updatedAt: -1 },
       priority:  { priority: 1 },
     };
     const sort = sortOptions[sortBy] || { deadline: 1 };

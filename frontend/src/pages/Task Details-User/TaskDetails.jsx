@@ -505,6 +505,9 @@ export default function TaskDetails() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
+
     const [filters, setFilters] = useState({
         ...EMPTY_FILTERS,
         dueProject: initialDueFilter,
@@ -515,7 +518,7 @@ export default function TaskDetails() {
         setLoading(true);
         setError(null);
         try {
-            const data = await userapiservicer.getMyTasks();
+            const data = await userapiservicer.getMyTasks({ limit: 1000, sortBy: 'updatedAt' });
             const normalized = (data.tasks || []).map(normalizeTask);
             setTasks(normalized);
         } catch (err) {
@@ -542,6 +545,16 @@ export default function TaskDetails() {
             return true;
         });
     }, [tasks, filters]);
+
+    // Reset to page 1 whenever filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filters]);
+
+    const paginatedTasks = useMemo(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredTasks.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    }, [filteredTasks, currentPage]);
 
     const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
@@ -665,7 +678,7 @@ export default function TaskDetails() {
                             </tr>
                         )}
 
-                        {!loading && !error && tasks.length > 0 && filteredTasks.length === 0 && (
+                        {!loading && !error && tasks.length > 0 && paginatedTasks.length === 0 && (
                             <tr>
                                 <td colSpan={COLUMN_COUNT} className="px-6 py-10 text-center text-gray-400 text-sm">
                                     No tasks match the current filters.
@@ -673,11 +686,11 @@ export default function TaskDetails() {
                             </tr>
                         )}
 
-                        {!loading && !error && filteredTasks.map((task, i) => (
+                        {!loading && !error && paginatedTasks.map((task, i) => (
                             <tr
                                 key={task.id}
                                 className={`transition-colors duration-100 hover:bg-gray-50 ${
-                                    i !== filteredTasks.length - 1 ? "border-b border-gray-100" : ""
+                                    i !== paginatedTasks.length - 1 ? "border-b border-gray-100" : ""
                                 }`}
                             >
                                 <td className="px-6 py-5 align-top">
@@ -710,6 +723,31 @@ export default function TaskDetails() {
                         ))}
                     </tbody>
                 </table>
+                
+                {/* Pagination Controls */}
+                {!loading && !error && filteredTasks.length > ITEMS_PER_PAGE && (
+                    <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-white">
+                        <div className="text-sm text-gray-500">
+                            Showing <span className="font-medium">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="font-medium">{Math.min(currentPage * ITEMS_PER_PAGE, filteredTasks.length)}</span> of <span className="font-medium">{filteredTasks.length}</span> tasks
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                Previous
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredTasks.length / ITEMS_PER_PAGE), p + 1))}
+                                disabled={currentPage >= Math.ceil(filteredTasks.length / ITEMS_PER_PAGE)}
+                                className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

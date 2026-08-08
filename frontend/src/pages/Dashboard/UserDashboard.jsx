@@ -59,6 +59,10 @@ const UserDashboard = () => {
     return { total, completed, active, rate };
   }, [tasks, doneList.length]);
 
+  const upcomingDeadlines = useMemo(() => {
+    return [...tasks].reverse().slice(0, 5);
+  }, [tasks]);
+
   const stats = [
     { label: 'To Do', value: todoList.length, icon: Clock, iconBg: 'bg-slate-100', iconColor: 'text-slate-500' },
     { label: 'In Progress', value: inProgressList.length, icon: Clock, iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
@@ -217,8 +221,8 @@ const UserDashboard = () => {
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-8 mb-6 sm:mb-8">
         <h3 className="font-bold text-slate-900 text-lg sm:text-xl mb-4 sm:mb-6">Upcoming Deadlines</h3>
         <div className="divide-y divide-slate-100">
-          {tasks.length > 0 ? (
-            tasks.slice(0, 5).map(({ _id, title, project, priority, deadline, status }) => (
+          {upcomingDeadlines.length > 0 ? (
+            upcomingDeadlines.map(({ _id, title, project, priority, deadline, status }) => (
               <div key={_id} className="py-5 first:pt-0 last:pb-0">
                 <div className="flex items-center justify-between gap-4">
                   <div>

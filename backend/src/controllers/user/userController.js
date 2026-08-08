@@ -9,9 +9,19 @@ export const getMyTasks = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const { status, priority, deadlineFrom, deadlineTo, sortBy, page, limit } = req.query;
+    const { status, priority, deadlineFrom, deadlineTo, sortBy, page, limit, projectName } = req.query;
 
     const query = { assignee: userId };
+
+    // Project Name filter
+    if (projectName) {
+      const project = await Project.findOne({ projectName });
+      if (project) {
+        query.project = project._id;
+      } else {
+        query.project = null; 
+      }
+    }
 
     // Status filter
     if (status) query.status = status;
@@ -38,7 +48,7 @@ export const getMyTasks = async (req, res) => {
       updatedAt: { updatedAt: -1 },
       priority:  { priority: 1 },
     };
-    const sort = sortOptions[sortBy] || { deadline: 1 };
+    const sort = sortOptions[sortBy] || { deadline: -1 };
 
     const totalTasks = await Task.countDocuments(query);
 

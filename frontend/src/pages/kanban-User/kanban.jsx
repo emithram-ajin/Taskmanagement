@@ -376,15 +376,13 @@ export default function TaskBoard() {
             limit: PAGE_LIMIT,
         };
 
+        if (projectFilter && projectFilter !== ALL_PROJECTS) {
+            params.projectName = projectFilter;
+        }
+
         try {
             const data = await userapiservicer.getMyTasks(params);
             let normalized = (data.tasks || []).map(normalizeTask);
-
-            // If a project filter is active, apply it client-side on the fetched page.
-            // (The backend doesn't support project filtering yet; this keeps it light.)
-            if (projectFilter && projectFilter !== ALL_PROJECTS) {
-                normalized = normalized.filter((t) => t.project === projectFilter);
-            }
 
             setCol(col.key, (prev) => ({
                 tasks: append ? [...prev.tasks, ...normalized] : normalized,

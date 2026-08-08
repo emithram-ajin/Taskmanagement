@@ -2,7 +2,7 @@ import axiosInstance from "./axiosConfig";
 
 const userapiservicer = {
     getMyTasks: async (params = {}) => {
-        const { status, priority, page, limit, sortBy } = params;
+        const { status, priority, page, limit, sortBy, projectName } = params;
         const response = await axiosInstance.get('/user/my-tasks', {
             params: {
                 ...(status && { status }),
@@ -10,6 +10,7 @@ const userapiservicer = {
                 ...(page && { page }),
                 ...(limit && { limit }),
                 ...(sortBy && { sortBy }),
+                ...(projectName && { projectName }),
             },
         });
         return response.data;

@@ -374,6 +374,7 @@ export default function TaskBoard() {
             status: col.apiStatus,
             page,
             limit: PAGE_LIMIT,
+            ...(col.key === "completed" && { sortBy: "updatedAt" })
         };
 
         if (projectFilter && projectFilter !== ALL_PROJECTS) {

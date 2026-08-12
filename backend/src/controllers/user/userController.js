@@ -47,6 +47,7 @@ export const getMyTasks = async (req, res) => {
       createdAt: { createdAt: -1 },
       updatedAt: { updatedAt: -1 },
       priority:  { priority: 1 },
+      updatedAt: { updatedAt: -1 },
     };
     const sort = sortOptions[sortBy] || { deadline: -1 };
 

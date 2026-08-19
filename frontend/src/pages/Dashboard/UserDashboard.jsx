@@ -59,8 +59,14 @@ const UserDashboard = () => {
     return { total, completed, active, rate };
   }, [tasks, doneList.length]);
 
+  // Upcoming Deadlines: incomplete tasks with a deadline that hasn't passed yet,
+  // sorted so the soonest deadline appears first.
   const upcomingDeadlines = useMemo(() => {
-    return [...tasks].reverse().slice(0, 5);
+    const now = new Date();
+    return tasks
+      .filter((t) => t.status !== 'completed' && t.deadline && new Date(t.deadline) >= now)
+      .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
+      .slice(0, 5);
   }, [tasks]);
 
   const stats = [

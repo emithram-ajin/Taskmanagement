@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutGrid, CheckSquare, KanbanSquare, MessageSquare, AlertCircle, LogOut, X, Menu, ChevronDown, GitBranch } from 'lucide-react';
+import { LayoutGrid, CheckSquare, KanbanSquare, MessageSquare, AlertCircle, LogOut, X, Menu, ChevronDown, GitBranch, Settings as SettingsIcon } from 'lucide-react';
 import { ShieldCheck, ArrowLeft } from 'lucide-react';
 
 const UserSidebar = ({ isOpen, onToggle, onLogout }) => {
@@ -42,6 +42,7 @@ const UserSidebar = ({ isOpen, onToggle, onLogout }) => {
         { label: 'Kanban Board', icon: KanbanSquare, path: '/kanban' },
         { label: 'Daily Scrum', icon: MessageSquare, path: '/daily-scrum' },
         { label: 'Report Blockers', icon: AlertCircle, path: '/blocker-tracking' },
+        { label: 'Settings', icon: SettingsIcon, path: '/settings' },
     ];
 
     const handleNavClick = (item) => {

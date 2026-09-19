@@ -9,6 +9,7 @@ import ScrumUpdates from '../pages/Scrum/ScrumUpdates';
 import BlockerTracking from '../pages/Blockers/BlockerTracking';
 import Members from '../pages/Members/Members';
 import AdminDependencies from '../pages/Dependencies/AdminDependencies';
+import AdminSettings from '../pages/Settings/AdminSettings';
 
 const AppRoutes = () => {
   return (
@@ -22,6 +23,7 @@ const AppRoutes = () => {
       <Route path="/kanban" element={<KanbanBoard />} />
       <Route path="/scrum" element={<ScrumUpdates />} />
       <Route path="/blockers" element={<BlockerTracking />} />
+      <Route path="/settings" element={<AdminSettings />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

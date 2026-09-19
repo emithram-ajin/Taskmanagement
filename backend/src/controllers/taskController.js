@@ -1,5 +1,22 @@
 import Task from "../models/Task.js";
 import User from "../models/User.js";
+import { sendEmail } from "../services/emailService.js";
+import { taskAssignedTemplate, taskAssignedText } from "../utils/taskEmailTemplate.js";
+
+// Sends the assignment email in the background.
+// A failed email is logged but never breaks the API response.
+const notifyAssignee = (task, subjectPrefix) => {
+  if (!task.assignee?.email) return;
+
+  sendEmail({
+    to: task.assignee.email,
+    subject: `${subjectPrefix}: ${task.title}`,
+    html: taskAssignedTemplate(task),
+    text: taskAssignedText(task),
+  }).catch((err) =>
+    console.error("Task assignment email failed:", err.message)
+  );
+};
 
 export const createTask = async (req, res) => {
   const { title, description, project, assignee, priority, status, deadline } = req.body;
@@ -23,7 +40,9 @@ export const createTask = async (req, res) => {
       .populate("project", "projectName")
       .populate("assignee", "name email department")
       .populate("createdBy", "name email");
-    
+
+    notifyAssignee(populatedTask, "New Task Assigned");
+
     res.status(201).json(populatedTask);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -50,7 +69,7 @@ export const getTasks = async (req, res) => {
       // Find all users in this department
       const users = await User.find({ department });
       const userIds = users.map(u => u._id);
-      
+
       if (assignee) {
         // If both department and assignee are specified, ensure the assignee belongs to that department
         if (userIds.some(id => id.toString() === assignee)) {
@@ -100,7 +119,7 @@ export const getTaskById = async (req, res) => {
       .populate("project", "projectName")
       .populate("assignee", "name email department")
       .populate("createdBy", "name email");
-    
+
     if (!task) return res.status(404).json({ message: "Task not found" });
     res.json(task);
   } catch (err) {
@@ -112,8 +131,11 @@ export const updateTask = async (req, res) => {
   try {
     const { title, description, project, assignee, priority, status, deadline } = req.body;
     const task = await Task.findById(req.params.taskId);
-    
+
     if (!task) return res.status(404).json({ message: "Task not found" });
+
+    // Remember who was assigned before, to detect reassignment
+    const previousAssignee = task.assignee.toString();
 
     if (title) task.title = title;
     if (description) task.description = description;
@@ -124,11 +146,17 @@ export const updateTask = async (req, res) => {
     if (deadline) task.deadline = deadline;
 
     await task.save();
+
     const populatedTask = await Task.findById(task._id)
       .populate("project", "projectName")
       .populate("assignee", "name email department")
       .populate("createdBy", "name email");
-    
+
+    // Notify the new assignee only if the assignee actually changed
+    if (assignee && String(assignee) !== previousAssignee) {
+      notifyAssignee(populatedTask, "Task Assigned to You");
+    }
+
     res.json(populatedTask);
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 import User from "../../models/User.js";
 import Task from "../../models/Task.js";
 import ProjectDependency from "../../models/ProjectDependency.js";
@@ -407,6 +408,63 @@ export const updateTaskStatus = async (req, res) => {
       .populate("createdBy", "name email");
 
     return res.status(200).json({ message: "Status updated successfully.", task: updated });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+    
+    if (!password || password.trim().length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters long." });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    user.password = password;
+    await user.save();
+
+    return res.status(200).json({ message: "Password updated successfully." });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email is already in use by another account." });
+      }
+      user.email = email;
+    }
+
+    if (name) {
+      user.name = name;
+    }
+
+    await user.save();
+    
+    // Return the updated user (excluding password)
+    const updatedUser = await User.findById(req.user._id).select("-password");
+
+    return res.status(200).json({ 
+      message: "Profile updated successfully.",
+      user: updatedUser
+    });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }

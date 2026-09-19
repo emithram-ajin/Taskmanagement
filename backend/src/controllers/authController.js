@@ -1,5 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { sendEmail } from "../services/emailService.js";
+import { memberAddedTemplate, memberAddedText } from "../utils/memberEmailTemplate.js";
 
 const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
@@ -10,6 +12,15 @@ export const register = async (req, res) => {
     if (exists) return res.status(400).json({ message: "User already exists" });
 
     const user = await User.create({ name, email, password, role, department });
+    
+    // Send email to the newly added member
+    sendEmail({
+      to: user.email,
+      subject: "Welcome to TaskManager - Your Account Details",
+      html: memberAddedTemplate(user, password),
+      text: memberAddedText(user, password),
+    }).catch((err) => console.error("Failed to send welcome email:", err.message));
+
     res.status(201).json({ _id: user._id, name: user.name, email: user.email, role: user.role, department: user.department, token: generateToken(user._id) });
   } catch (err) {
     res.status(500).json({ message: err.message });

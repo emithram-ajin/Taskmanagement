@@ -12,6 +12,8 @@ import {
   updateBlockerAssignee,
   getMyBlockers,
   getMyDepartmentMembers,
+  changePassword,
+  updateProfile,
 } from "../controllers/user/userController.js";
 import {
   createScrum,
@@ -34,6 +36,8 @@ router.get("/blocked-tasks", protect, getBlockedTasks);
 router.put("/blocked-tasks/reason/:id", protect, updateBlockerAssignee);
 router.get("/my-blockers", protect, getMyBlockers);
 router.get("/my-department-members", protect, getMyDepartmentMembers);
+router.put("/change-password", protect, changePassword);
+router.put("/update-profile", protect, updateProfile);
 
 // ── Dependency routes ──────────────────────────────────────
 router.post("/dependency",     protect, postDependency);

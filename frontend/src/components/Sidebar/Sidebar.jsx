@@ -11,7 +11,8 @@ import {
   AlertCircle,
   LogOut,
   FolderGit2,
-  X
+  X,
+  Settings as SettingsIcon
 } from 'lucide-react';
 
 const Sidebar = ({ onLogout, isOpen, onClose }) => {
@@ -34,6 +35,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
     { icon: KanbanSquare, label: 'Kanban Board', path: '/kanban' },
     { icon: MessageSquare, label: 'Scrum Updates', path: '/scrum' },
     { icon: AlertCircle, label: 'Blockers', path: '/blockers' },
+    { icon: SettingsIcon, label: 'Settings', path: '/settings' },
   ];
 
   return (

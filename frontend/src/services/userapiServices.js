@@ -122,7 +122,15 @@ const userapiservicer = {
         return response.data;
     },
 
+    updatePassword: async (password) => {
+        const response = await axiosInstance.put('/user/change-password', { password });
+        return response.data;
+    },
 
+    updateProfile: async (data) => {
+        const response = await axiosInstance.put('/user/update-profile', data);
+        return response.data;
+    }
 };
 
 export default userapiservicer;

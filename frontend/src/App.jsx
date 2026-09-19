@@ -12,6 +12,7 @@ import TaskDetails from './pages/Task Details-User/TaskDetails';
 import TaskBoard from './pages/kanban-User/kanban';
 import BlockerTracking from './pages/Report-User/BlockerTracking';
 import Dependencies from './pages/Task Details-User/Dependencies';
+import Settings from './pages/Settings/Settings';
 
 function App() {
   const navigate = useNavigate();
@@ -67,6 +68,7 @@ function App() {
           <Route path="/daily-scrum" element={<DailyScrum />} />
           <Route path="/blocker-tracking" element={<BlockerTracking />} />
           <Route path="/taskDetails/dependencies" element={<Dependencies />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </UserLayout>
     </>

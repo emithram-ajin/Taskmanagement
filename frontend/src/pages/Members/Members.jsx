@@ -370,8 +370,7 @@ const Members = () => {
   const handleEditMember = async (id, memberData) => {
     try {
       await apiServices.adminEditUser(id, memberData);
-      const newMemberData = await apiServices.getMembers();
-      setMembers(newMemberData);
+      await fetchMembers();
       setEditModal({ isOpen: false, member: null });
       Swal.fire({ title: "Success", text: "Member updated successfully.", icon: "success", timer: 1000, showConfirmButton: false, width: "400px" });
     } catch (error) {

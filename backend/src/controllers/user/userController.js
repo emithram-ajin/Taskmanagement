@@ -5,6 +5,8 @@ import Task from "../../models/Task.js";
 import ProjectDependency from "../../models/ProjectDependency.js";
 import Team from "../../models/Team.js";
 import Project from "../../models/Project.js";
+import { sendEmail } from "../../services/emailService.js";
+import { blockerAssignedTemplate, blockerAssignedText } from "../../utils/taskEmailTemplate.js";
 
 export const getMyTasks = async (req, res) => {
   try {
@@ -134,6 +136,20 @@ export const updateBlockerAssignee = async (req, res) => {
       .populate("assignee", "name email department")
       .populate("blockerAssignee", "name email department")
       .populate("createdBy", "name email");
+
+    // Send email notification to the blocker assignee
+    if (updated.blockerAssignee && updated.blockerAssignee.email) {
+      try {
+        await sendEmail({
+          to: updated.blockerAssignee.email,
+          subject: `Task Blocker Assigned: ${updated.title}`,
+          html: blockerAssignedTemplate(updated),
+          text: blockerAssignedText(updated),
+        });
+      } catch (emailErr) {
+        console.error("Failed to send blocker assignment email:", emailErr);
+      }
+    }
 
     res.status(200).json({
       message: "Blocker assignee updated successfully.",

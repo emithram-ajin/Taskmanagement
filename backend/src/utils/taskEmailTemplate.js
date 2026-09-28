@@ -157,3 +157,94 @@ export const taskAssignedText = (task) => {
 
     return lines.join("\n");
 };
+
+/* ------------------------------------------------------------------ */
+/* Blocker Assigned HTML version                                       */
+/* ------------------------------------------------------------------ */
+export const blockerAssignedTemplate = (task) => {
+    const assigneeName = task.blockerAssignee?.name || "Team Member";
+    const assignedBy = task.assignee?.name || "Team Member";
+    const projectName = task.project?.projectName || "-";
+    const deadline = formatDeadline(task.deadline);
+    const taskLink = getTaskLink(task);
+
+    const linkParagraph = taskLink
+        ? `<div style="margin-top: 24px;">
+             <a href="${escapeHtml(taskLink)}" target="_blank" style="display:inline-block; padding:12px 24px; background-color:#ef4444; color:#ffffff; font-size:14px; font-weight:600; text-decoration:none; border-radius:4px;">
+               View Task Details
+             </a>
+           </div>`
+        : "";
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Action Required: Task Blocker</title>
+</head>
+<body style="margin:0; padding:20px; font-family:${FONT_STACK}; color:#333333; background-color:#f9fafb;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb; border-top: 4px solid #ef4444; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <h2 style="margin-top: 0; color: #111827; font-size: 20px;">🚨 Task Blocker Assigned</h2>
+    
+    <p style="font-size: 15px; color: #4b5563; line-height: 1.5; margin-bottom: 24px;">
+      Hi ${escapeHtml(assigneeName)},<br><br>
+      <strong>${escapeHtml(assignedBy)}</strong> has assigned you to resolve a blocker for the task <strong>"${escapeHtml(task.title)}"</strong> in project <strong>${escapeHtml(projectName)}</strong>.
+    </p>
+
+    <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin-bottom: 24px; border-radius: 4px;">
+      <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 14px; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px;">Blocker Reason</h3>
+      <p style="margin: 0; font-size: 15px; color: #7f1d1d; white-space: pre-line;">${escapeHtml(task.blockerReason)}</p>
+    </div>
+    
+    <p style="font-size: 14px; color: #6b7280; margin-bottom: 24px;">
+      <strong>Deadline:</strong> ${escapeHtml(deadline)}
+    </p>
+
+    ${linkParagraph}
+
+    <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 32px 0 24px 0;" />
+    
+    <p style="font-size: 13px; color: #9ca3af; margin: 0;">
+      This is an automated message from TaskManager. Please do not reply.
+    </p>
+  </div>
+</body>
+</html>`;
+};
+
+/* ------------------------------------------------------------------ */
+/* Blocker Assigned Plain-text version                                 */
+/* ------------------------------------------------------------------ */
+export const blockerAssignedText = (task) => {
+    const assigneeName = task.blockerAssignee?.name || "Team Member";
+    const assignedBy = task.assignee?.name || "Team Member";
+    const taskLink = getTaskLink(task);
+
+    const lines = [
+        "TaskManager - Task Blocker Assignment",
+        "=====================================",
+        "",
+        `Dear ${assigneeName},`,
+        "",
+        `This is to inform you that a task blocker has been assigned to you by ${assignedBy}. The details are given below:`,
+        "",
+        `Task Title    : ${task.title}`,
+        `Project       : ${task.project?.projectName || "-"}`,
+        `Deadline      : ${formatDeadline(task.deadline)}`,
+        `Assigned By   : ${assignedBy}`,
+        "",
+        "Blocker Reason:",
+        task.blockerReason,
+        "",
+        "Kindly review the blocker and resolve it as soon as possible.",
+    ];
+
+    if (taskLink) {
+        lines.push("", `You may view the task at: ${taskLink}`);
+    }
+
+    lines.push("", "Best regards,", "TaskManager Administration", "", "--------------------------------------------------", "This is an automated notification from TaskManager.");
+
+    return lines.join("\n");
+};

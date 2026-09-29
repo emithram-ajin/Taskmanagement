@@ -248,3 +248,85 @@ export const blockerAssignedText = (task) => {
 
     return lines.join("\n");
 };
+
+/* ------------------------------------------------------------------ */
+/* Overdue Task HTML version                                          */
+/* ------------------------------------------------------------------ */
+export const taskOverdueTemplate = (task) => {
+    const assigneeName = task.assignee?.name || "Team Member";
+    const projectName = task.project?.projectName || "-";
+    const deadline = formatDeadline(task.deadline);
+    const taskLink = getTaskLink(task);
+
+    const linkParagraph = taskLink
+        ? `<div style="margin-top: 24px;">
+             <a href="${escapeHtml(taskLink)}" target="_blank" style="display:inline-block; padding:12px 24px; background-color:#ef4444; color:#ffffff; font-size:14px; font-weight:600; text-decoration:none; border-radius:4px;">
+               View Task Dashboard
+             </a>
+           </div>`
+        : "";
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Action Required: Overdue Task</title>
+</head>
+<body style="margin:0; padding:20px; font-family:${FONT_STACK}; color:#333333; background-color:#f9fafb;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb; border-top: 4px solid #ef4444; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <h2 style="margin-top: 0; color: #111827; font-size: 20px;">🚨 Task Overdue Notification</h2>
+    
+    <p style="font-size: 15px; color: #4b5563; line-height: 1.5; margin-bottom: 24px;">
+      Hi ${escapeHtml(assigneeName)},<br><br>
+      This is a reminder that the task <strong>"${escapeHtml(task.title)}"</strong> in project <strong>${escapeHtml(projectName)}</strong> is currently overdue by 2 days.
+    </p>
+
+    <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin-bottom: 24px; border-radius: 4px;">
+      <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 14px; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px;">Task Details</h3>
+      <p style="margin: 0 0 8px 0; font-size: 14px; color: #7f1d1d;"><strong>Title:</strong> ${escapeHtml(task.title)}</p>
+      <p style="margin: 0; font-size: 14px; color: #7f1d1d;"><strong>Deadline:</strong> ${escapeHtml(deadline)}</p>
+    </div>
+
+    ${linkParagraph}
+
+    <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 32px 0 24px 0;" />
+    
+    <p style="font-size: 13px; color: #9ca3af; margin: 0;">
+      This is an automated message from TaskManager. Please do not reply.
+    </p>
+  </div>
+</body>
+</html>`;
+};
+
+/* ------------------------------------------------------------------ */
+/* Overdue Task Plain-text version                                    */
+/* ------------------------------------------------------------------ */
+export const taskOverdueText = (task) => {
+    const assigneeName = task.assignee?.name || "Team Member";
+    const taskLink = getTaskLink(task);
+
+    const lines = [
+        "TaskManager - Task Overdue Notification",
+        "=======================================",
+        "",
+        `Dear ${assigneeName},`,
+        "",
+        `This is a reminder that the task "${task.title}" in project "${task.project?.projectName || "-"}" is currently overdue by 2 days.`,
+        "",
+        `Task Title : ${task.title}`,
+        `Project    : ${task.project?.projectName || "-"}`,
+        `Deadline   : ${formatDeadline(task.deadline)}`,
+        "",
+        "Please update the status or complete it as soon as possible.",
+    ];
+
+    if (taskLink) {
+        lines.push("", `You may view the task at: ${taskLink}`);
+    }
+
+    lines.push("", "Best regards,", "TaskManager Administration", "", "--------------------------------------------------", "This is an automated notification from TaskManager.");
+
+    return lines.join("\n");
+};

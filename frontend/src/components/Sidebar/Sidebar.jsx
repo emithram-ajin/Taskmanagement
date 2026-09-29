@@ -64,7 +64,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
           </button>
         </div>
 
-      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {navItems.map((item, index) => {
           const isActive = location.pathname === item.path;
             return (

@@ -53,13 +53,25 @@ export const getTasks = async (req, res) => {
   try {
     const { project, status, priority, department, assignee, page, limit } = req.query;
     const query = {};
+    let sortQuery = { createdAt: -1 }; // Show last assigned/created first
 
     if (project) {
       query.project = project;
     }
+    
     if (status) {
-      query.status = status;
+      if (status.toLowerCase() === 'overdue') {
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        query.status = { $ne: 'completed' };
+        query.deadline = { $lt: startOfToday };
+        sortQuery = { deadline: 1 }; // Sort overdue tasks by deadline ascending (oldest first)
+      } else {
+        query.status = status;
+      }
     }
+    
     if (priority) {
       // Perform case-insensitive match for priority (e.g. 'high' matches 'High')
       query.priority = { $regex: new RegExp(`^${priority}$`, "i") };
@@ -97,7 +109,7 @@ export const getTasks = async (req, res) => {
       .populate("project", "projectName")
       .populate("assignee", "name email department")
       .populate("createdBy", "name email")
-      .sort({ createdAt: -1 }) // Show last assigned/created first
+      .sort(sortQuery)
       .skip(skipNum)
       .limit(limitNum);
 

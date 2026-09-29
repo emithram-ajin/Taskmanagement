@@ -7,8 +7,10 @@ import adminRoutes from "./src/routes/adminRoutes.js";
 import projectRoutes from "./src/routes/projectRoutes.js";
 import taskRoutes from "./src/routes/taskRoutes.js";
 import userRoutes from "./src/routes/userRoutes.js";
+import { initCronJobs } from "./src/utils/cronJobs.js";
 
 connectDB();
+initCronJobs();
 
 const app = express();
 

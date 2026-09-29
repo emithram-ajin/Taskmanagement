@@ -83,7 +83,7 @@ const UserSidebar = ({ isOpen, onToggle, onLogout }) => {
                 </div>
 
                 {/* Nav */}
-                <nav className="flex-1 px-4 space-y-1">
+                <nav className="flex-1 px-4 space-y-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     {navItems.map((item) => {
                         const { label, icon: Icon, path, subItems } = item;
                         const active = location.pathname === path;

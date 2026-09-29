@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Swal from "sweetalert2";
 import { Pencil, Trash2, Clock, CheckCircle2, AlertCircle, PlayCircle } from 'lucide-react';
 import CreateTaskModal from '../../components/Modal/CreateTaskModal';
@@ -9,13 +10,17 @@ import CustomDropdown from '../../components/Dropdown/CustomDropdown';
 import Pagination from '../../components/Pagination/Pagination';
 
 const TaskList = () => {
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialStatus = queryParams.get('status') || '';
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
   const [editTask, setEditTask] = useState(null);
 
   const [filterProject, setFilterProject] = useState('');
   const [filterAssignee, setFilterAssignee] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState(initialStatus);
   const [filterPriority, setFilterPriority] = useState('');
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -25,6 +30,15 @@ const TaskList = () => {
   const [allProjects, setAllProjects] = useState([]);
   const [allMembers, setAllMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Update status if URL changes while component is mounted
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const statusParam = params.get('status');
+    if (statusParam && statusParam !== filterStatus) {
+      setFilterStatus(statusParam);
+    }
+  }, [location.search]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -109,6 +123,15 @@ const TaskList = () => {
     }
   };
 
+  const isOverdue = (task) => {
+    if (!task.deadline) return false;
+    if (task.status?.toLowerCase() === 'completed') return false;
+    
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    
+    return new Date(task.deadline) < startOfToday;
+  };
 
 
   return (
@@ -162,7 +185,8 @@ const TaskList = () => {
             { value: 'assigned', label: 'To Do' },
             { value: 'progress', label: 'In Progress' },
             { value: 'completed', label: 'Completed' },
-            { value: 'blocker', label: 'Blocker' }
+            { value: 'blocker', label: 'Blocker' },
+            { value: 'overdue', label: 'Overdue' }
           ]}
         />
 
@@ -240,7 +264,10 @@ const TaskList = () => {
 
                   <div className="w-32 shrink-0">
                     <div className="text-xs text-slate-500 mb-1">Deadline</div>
-                    <div className="text-sm font-medium text-slate-700">{task.deadline ? new Date(task.deadline).toLocaleDateString() : 'N/A'}</div>
+                    <div className={`text-sm font-medium ${isOverdue(task) ? 'text-rose-600 font-bold' : 'text-slate-700'}`}>
+                      {task.deadline ? new Date(task.deadline).toLocaleDateString() : 'N/A'}
+                      {isOverdue(task) && <span className="ml-2 text-[10px] uppercase tracking-wider font-bold text-rose-600 bg-rose-100 px-1.5 py-0.5 rounded">Overdue</span>}
+                    </div>
                   </div>
 
                   <div className="w-20 flex justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">

@@ -70,9 +70,10 @@ const Dashboard = () => {
         setRecentBlockers(blockers.slice(0, 5)); // Keep top 5
 
         // 2. Delayed Tasks (past deadline and not completed)
-        const now = new Date();
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
         const delayed = allTasks.filter(t => {
-          return t.deadline && new Date(t.deadline) < now && t.status !== 'completed';
+          return t.deadline && new Date(t.deadline) < startOfToday && t.status !== 'completed';
         });
         setDelayedCount(delayed.length);
 
@@ -237,7 +238,7 @@ const Dashboard = () => {
       {/* Delayed Tasks Alert */}
       {delayedCount > 0 && (
         <div 
-          onClick={() => navigate('/tasks')}
+          onClick={() => navigate('/tasks?status=overdue')}
           className="mt-6 bg-rose-50 border border-rose-100 rounded-xl p-5 flex items-start space-x-4 cursor-pointer hover:bg-rose-100/70 hover:shadow-sm transition-all"
         >
           <div className="bg-rose-100 p-2 rounded-full text-rose-600 mt-0.5">

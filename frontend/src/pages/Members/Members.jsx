@@ -384,6 +384,7 @@ const Members = () => {
       await apiServices.deleteMember(id);
       setMembers(members.filter((m) => m.id !== id));
       setDeleteConfirm({ isOpen: false, id: null });
+      Swal.fire({ title: "Success", text: "Member deleted successfully.", icon: "success", timer: 1000, showConfirmButton: false, width: "400px" });
     } catch (error) {
       console.error("Error deleting member:", error);
       Swal.fire({ title: "Error", text: "Failed to delete member.", icon: "error", confirmButtonColor: "#4f46e5" });

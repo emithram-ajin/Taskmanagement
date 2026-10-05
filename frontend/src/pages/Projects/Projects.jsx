@@ -73,6 +73,7 @@ const Projects = () => {
       await apiServices.deleteProject(projectId);
       setProjects(projects.filter(p => p._id !== projectId));
       setDeleteConfirm({ isOpen: false, id: null });
+      Swal.fire({ title: "Success", text: "Project deleted successfully.", icon: "success", timer: 1000, showConfirmButton: false, width: "400px" });
     } catch (error) {
       console.error("Failed to delete project:", error);
       Swal.fire({ title: "Error", text: "Failed to delete project", icon: "error", confirmButtonColor: "#4f46e5" });

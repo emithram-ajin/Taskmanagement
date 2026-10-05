@@ -98,6 +98,7 @@ const TaskList = () => {
       await apiServices.deleteTask(taskId);
       setTasks(tasks.filter(t => t._id !== taskId));
       setDeleteConfirm({ isOpen: false, id: null });
+      Swal.fire({ title: "Success", text: "Task deleted successfully.", icon: "success", timer: 1000, showConfirmButton: false, width: "400px" });
     } catch (error) {
       console.error("Failed to delete task:", error);
       Swal.fire({ title: "Error", text: "Failed to delete task", icon: "error", confirmButtonColor: "#4f46e5" });

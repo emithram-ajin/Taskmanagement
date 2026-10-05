@@ -72,6 +72,8 @@ const Teams = () => {
     try {
       await apiServices.deleteTeam(teamId);
       setTeams(teams.filter((t) => t._id !== teamId));
+      setDeleteConfirm({ isOpen: false, id: null });
+      Swal.fire({ title: "Success", text: "Team deleted successfully.", icon: "success", timer: 1000, showConfirmButton: false, width: "400px" });
     } catch (error) {
       console.error("Failed to delete team:", error);
       Swal.fire({ title: "Error", text: "Failed to delete team", icon: "error", confirmButtonColor: "#4f46e5" });

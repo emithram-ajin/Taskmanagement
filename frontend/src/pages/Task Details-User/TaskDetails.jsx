@@ -534,13 +534,17 @@ export default function TaskDetails() {
     }, []);
 
     const filteredTasks = useMemo(() => {
-        const now = new Date();
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
         return tasks.filter((t) => {
             if (filters.status && t.status !== filters.status) return false;
             if (filters.priority && t.priority !== filters.priority) return false;
             if (!withinDateRange(t.deadlineRaw, filters.deadlineFrom, filters.deadlineTo)) return false;
             if (filters.dueProject) {
-                if (!t.deadlineRaw || new Date(t.deadlineRaw) >= now || t.status === 'completed') return false;
+                if (!t.deadlineRaw || t.status === 'completed') return false;
+                const datePart = typeof t.deadlineRaw === 'string' ? t.deadlineRaw.split('T')[0] : new Date(t.deadlineRaw).toISOString().split('T')[0];
+                const taskDate = new Date(datePart + 'T00:00:00');
+                if (taskDate >= startOfToday) return false;
             }
             return true;
         });

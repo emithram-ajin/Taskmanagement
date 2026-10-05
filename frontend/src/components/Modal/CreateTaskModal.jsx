@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Swal from "sweetalert2";
 import Modal from './Modal';
 import CustomDropdown from '../Dropdown/CustomDropdown';
+import ModernDatePicker from '../DatePicker/ModernDatePicker';
 
 const CreateTaskModal = ({ isOpen, onClose, onSave, allProjects = [], allMembers = [], task = null }) => {
   const [title, setTitle] = useState('');
@@ -117,7 +118,7 @@ const CreateTaskModal = ({ isOpen, onClose, onSave, allProjects = [], allMembers
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Deadline</label>
-          <input type="date" required value={deadline} onChange={e => setDeadline(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow" />
+          <ModernDatePicker required value={deadline} onChange={setDeadline} placeholder="Select deadline" placement="top" />
         </div>
         <div className="flex space-x-3 pt-4">
           <button type="submit" disabled={isSubmitting} className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white py-2 rounded-lg text-sm font-medium transition-colors">

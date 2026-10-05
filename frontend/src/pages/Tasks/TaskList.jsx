@@ -130,7 +130,9 @@ const TaskList = () => {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
     
-    return new Date(task.deadline) < startOfToday;
+    const datePart = typeof task.deadline === 'string' ? task.deadline.split('T')[0] : new Date(task.deadline).toISOString().split('T')[0];
+    const taskDate = new Date(datePart + 'T00:00:00');
+    return taskDate < startOfToday;
   };
 
 

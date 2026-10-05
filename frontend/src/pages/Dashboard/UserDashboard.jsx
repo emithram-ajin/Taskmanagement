@@ -47,8 +47,16 @@ const UserDashboard = () => {
   const doneList = useMemo(() => tasks.filter((t) => t.status === 'completed'), [tasks]);
 
   const overdueList = useMemo(() => {
-    const now = new Date();
-    return tasks.filter((t) => t.deadline && new Date(t.deadline) < now && t.status !== 'completed');
+    // Get today's local date string in YYYY-MM-DD format
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    return tasks.filter((t) => {
+      if (!t.deadline || t.status === 'completed') return false;
+      const datePart = typeof t.deadline === 'string' ? t.deadline.split('T')[0] : new Date(t.deadline).toISOString().split('T')[0];
+      const taskDate = new Date(datePart + 'T00:00:00');
+      return taskDate < startOfToday;
+    });
   }, [tasks]);
 
   const productivity = useMemo(() => {
@@ -62,9 +70,16 @@ const UserDashboard = () => {
   // Upcoming Deadlines: incomplete tasks with a deadline that hasn't passed yet,
   // sorted so the soonest deadline appears first.
   const upcomingDeadlines = useMemo(() => {
-    const now = new Date();
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
     return tasks
-      .filter((t) => t.status !== 'completed' && t.deadline && new Date(t.deadline) >= now)
+      .filter((t) => {
+        if (!t.deadline || t.status === 'completed') return false;
+        const datePart = typeof t.deadline === 'string' ? t.deadline.split('T')[0] : new Date(t.deadline).toISOString().split('T')[0];
+        const taskDate = new Date(datePart + 'T00:00:00');
+        return taskDate >= startOfToday;
+      })
       .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
       .slice(0, 5);
   }, [tasks]);

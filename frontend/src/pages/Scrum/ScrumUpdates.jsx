@@ -3,6 +3,7 @@ import { MessageSquare, CalendarDays, X } from 'lucide-react';
 import apiServices from '../../services/apiServices';
 import Loader from '../../components/Loader/Loader';
 import CustomDropdown from '../../components/Dropdown/CustomDropdown';
+import ModernDatePicker from '../../components/DatePicker/ModernDatePicker';
 import Pagination from '../../components/Pagination/Pagination';
 
 const ALL_PROJECTS = 'All Projects';
@@ -228,20 +229,19 @@ const ScrumUpdates = () => {
         </div>
         <div>
           <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">From Date</label>
-          <input 
-            type="date"
+          <ModernDatePicker 
             value={filterDateFrom}
-            onChange={(e) => setFilterDateFrom(e.target.value)}
-            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400"
+            onChange={setFilterDateFrom}
+            placeholder="From Date"
           />
         </div>
         <div>
           <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">To Date</label>
-          <input 
-            type="date"
+          <ModernDatePicker 
             value={filterDateTo}
-            onChange={(e) => setFilterDateTo(e.target.value)}
-            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-slate-400"
+            onChange={setFilterDateTo}
+            placeholder="To Date"
+            align="right"
           />
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
+import ModernDatePicker from '../DatePicker/ModernDatePicker';
 
 const CreateProjectModal = ({ isOpen, onClose, onSave, allTeams = [], project = null }) => {
   const [projectName, setProjectName] = useState('');
@@ -57,11 +58,11 @@ const CreateProjectModal = ({ isOpen, onClose, onSave, allTeams = [], project = 
         <div className="flex space-x-4">
           <div className="flex-1">
             <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
-            <input type="date" required value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow" />
+            <ModernDatePicker required value={startDate} onChange={setStartDate} placeholder="Start Date" placement="top" />
           </div>
           <div className="flex-1">
             <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
-            <input type="date" required value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow" />
+            <ModernDatePicker required value={endDate} onChange={setEndDate} placeholder="End Date" placement="top" />
           </div>
         </div>
         <div>

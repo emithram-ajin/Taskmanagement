@@ -73,7 +73,10 @@ const Dashboard = () => {
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
         const delayed = allTasks.filter(t => {
-          return t.deadline && new Date(t.deadline) < startOfToday && t.status !== 'completed';
+          if (!t.deadline || t.status === 'completed') return false;
+          const datePart = typeof t.deadline === 'string' ? t.deadline.split('T')[0] : new Date(t.deadline).toISOString().split('T')[0];
+          const taskDate = new Date(datePart + 'T00:00:00');
+          return taskDate < startOfToday;
         });
         setDelayedCount(delayed.length);
 

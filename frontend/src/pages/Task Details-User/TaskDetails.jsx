@@ -10,6 +10,7 @@ import {
     CalendarClock,
     Calendar as CalendarIcon,
     AlertCircle,
+    FolderKanban,
 } from "lucide-react";
 import userapiservicer from "../../services/userapiServices";
 import { useSearchParams } from "react-router-dom";
@@ -84,7 +85,7 @@ function FilterPillSelect({ icon: Icon, label, value, options, onChange }) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const selected = options.find((o) => o.value === value);
+    const selected = options.find((o) => o.value === value || o.label === value);
     const isActive = Boolean(value);
 
     return (
@@ -98,8 +99,8 @@ function FilterPillSelect({ icon: Icon, label, value, options, onChange }) {
                         : "border-gray-300 bg-white text-gray-600 hover:border-indigo-300 hover:text-gray-800"
                 }`}
             >
-                <Icon size={14} className={isActive ? "text-indigo-500" : "text-gray-400"} />
-                {selected ? selected.label : label}
+                <Icon size={14} className={isActive ? "text-indigo-500 shrink-0" : "text-gray-400 shrink-0"} />
+                <span className="truncate max-w-[150px]">{selected ? selected.label : label}</span>
                 {isActive && (
                     <span
                         role="button"
@@ -116,33 +117,37 @@ function FilterPillSelect({ icon: Icon, label, value, options, onChange }) {
                 )}
                 <ChevronDown
                     size={14}
-                    className={`text-gray-400 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+                    className={`text-gray-400 transition-transform duration-150 shrink-0 ${open ? "rotate-180" : ""}`}
                 />
             </button>
 
             {open && (
-                <div className="absolute z-20 mt-1.5 min-w-[170px] bg-white border border-gray-200 rounded-lg shadow-lg py-1">
-                    {options.map((option) => {
-                        const isSelected = option.value === value;
-                        return (
-                            <button
-                                key={option.value}
-                                type="button"
-                                onClick={() => {
-                                    onChange(option.value);
-                                    setOpen(false);
-                                }}
-                                className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left transition-colors duration-100 ${
-                                    isSelected
-                                        ? "bg-indigo-50 text-indigo-700 font-medium"
-                                        : "text-gray-700 hover:bg-gray-50"
-                                }`}
-                            >
-                                {option.label}
-                                {isSelected && <Check size={14} className="text-indigo-600" />}
-                            </button>
-                        );
-                    })}
+                <div className="absolute z-20 mt-1.5 min-w-[170px] max-w-[260px] max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+                    {options.length === 0 ? (
+                        <div className="px-3 py-2 text-xs text-gray-400">No options available</div>
+                    ) : (
+                        options.map((option) => {
+                            const isSelected = option.value === value || option.label === value;
+                            return (
+                                <button
+                                    key={option.value}
+                                    type="button"
+                                    onClick={() => {
+                                        onChange(option.value);
+                                        setOpen(false);
+                                    }}
+                                    className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left transition-colors duration-100 ${
+                                        isSelected
+                                            ? "bg-indigo-50 text-indigo-700 font-medium"
+                                            : "text-gray-700 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    <span className="truncate mr-2">{option.label}</span>
+                                    {isSelected && <Check size={14} className="text-indigo-600 shrink-0" />}
+                                </button>
+                            );
+                        })
+                    )}
                 </div>
             )}
         </div>
@@ -489,6 +494,7 @@ function withinDateRange(dateRaw, from, to) {
 }
 
 const EMPTY_FILTERS = {
+    project: "",
     status: "",
     priority: "",
     deadlineFrom: "",
@@ -500,8 +506,10 @@ export default function TaskDetails() {
     const [searchParams] = useSearchParams();
     const initialDueFilter = searchParams.get('filter') === 'due';
     const initialStatusFilter = searchParams.get('status') || "";
+    const initialProjectFilter = searchParams.get('project') || searchParams.get('projectName') || "";
     
     const [tasks, setTasks] = useState([]);
+    const [projectOptions, setProjectOptions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -511,7 +519,8 @@ export default function TaskDetails() {
     const [filters, setFilters] = useState({
         ...EMPTY_FILTERS,
         dueProject: initialDueFilter,
-        status: initialStatusFilter
+        status: initialStatusFilter,
+        project: initialProjectFilter,
     });
 
     const fetchMyTasks = async () => {
@@ -533,10 +542,47 @@ export default function TaskDetails() {
         fetchMyTasks();
     }, []);
 
+    useEffect(() => {
+        let isMounted = true;
+        const fetchProjects = async () => {
+            try {
+                const res = await userapiservicer.getProjects();
+                const list = Array.isArray(res) ? res : res?.projects || [];
+                const map = new Map();
+                list.forEach((p) => {
+                    const name = p.projectName || p.name;
+                    if (name) {
+                        map.set(name, { value: name, label: name });
+                    }
+                });
+                tasks.forEach((t) => {
+                    if (t.project && t.project !== "—" && !map.has(t.project)) {
+                        map.set(t.project, { value: t.project, label: t.project });
+                    }
+                });
+                if (isMounted) {
+                    setProjectOptions(Array.from(map.values()));
+                }
+            } catch (err) {
+                console.error("Failed to load projects:", err);
+                const unique = Array.from(new Set(tasks.map((t) => t.project).filter((p) => p && p !== "—")));
+                if (isMounted) {
+                    setProjectOptions(unique.map((p) => ({ value: p, label: p })));
+                }
+            }
+        };
+
+        fetchProjects();
+        return () => {
+            isMounted = false;
+        };
+    }, [tasks]);
+
     const filteredTasks = useMemo(() => {
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
         return tasks.filter((t) => {
+            if (filters.project && t.project !== filters.project && t.projectId !== filters.project) return false;
             if (filters.status && t.status !== filters.status) return false;
             if (filters.priority && t.priority !== filters.priority) return false;
             if (!withinDateRange(t.deadlineRaw, filters.deadlineFrom, filters.deadlineTo)) return false;
@@ -578,6 +624,13 @@ export default function TaskDetails() {
 
             {/* Filter toolbar — standalone pills sitting directly above the table */}
             <div className="flex flex-wrap items-center gap-2 mb-4">
+                <FilterPillSelect
+                    icon={FolderKanban}
+                    label="Project"
+                    value={filters.project}
+                    options={projectOptions}
+                    onChange={(val) => updateFilter("project", val)}
+                />
                 <FilterPillSelect
                     icon={ListChecks}
                     label="Status"
